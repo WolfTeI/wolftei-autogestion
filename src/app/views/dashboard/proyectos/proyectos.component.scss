@@ -1,0 +1,290 @@
+.page-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    .page-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      color: var(--color-primary, #667eea);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      margin: 2px 0 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted, #888);
+    }
+  }
+}
+
+.loading-shade {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 20px;
+  gap: 14px;
+  color: var(--color-text-muted, #888);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 12px;
+  }
+  
+  p {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  small {
+    color: var(--color-text-muted, #888);
+  }
+}
+
+// ── Tablero Kanban ──
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.kanban-column {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+
+  .col-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-top: 3px solid #667eea;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+    .col-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+
+      mat-icon {
+        font-size: 1.15rem;
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+    }
+
+    .count-badge {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+  }
+
+  .col-cards {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 220px;
+  }
+
+  .col-empty {
+    text-align: center;
+    padding: 40px 10px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.85rem;
+  }
+}
+
+.kanban-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  padding: 12px !important;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(102, 126, 234, 0.4) !important;
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+
+    .card-phase {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #818cf8;
+      background: rgba(129, 140, 248, 0.12);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .more-btn {
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    }
+  }
+
+  .card-title {
+    margin: 4px 0 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: white;
+  }
+
+  .card-client {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--color-text-muted, #888);
+    margin-bottom: 12px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+    }
+
+    .client-link {
+      color: #38bdf8;
+      text-decoration: none;
+      &:hover { text-decoration: underline; }
+    }
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+    .card-amount {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #a78bfa;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      .btn-sm {
+        height: 28px;
+        line-height: 28px;
+        font-size: 0.75rem;
+        padding: 0 10px;
+        mat-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 4px; }
+      }
+
+      .review-star {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #f59e0b;
+        mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      }
+    }
+  }
+}
+
+.menu-header {
+  display: block;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #888);
+  font-weight: 600;
+}
+
+// ── Vista Tabla Clásica ──
+.proyectos-table {
+  width: 100%;
+
+  .element-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .client-link {
+    color: #38bdf8;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .review-completed-chip {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid #10b981;
+
+    mat-icon { color: #f59e0b; }
+  }
+}
+
+@media (max-width: 1000px) {
+  .kanban-board {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .kanban-board {
+    grid-template-columns: 1fr;
+  }
+}

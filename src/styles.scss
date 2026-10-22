@@ -1,0 +1,57 @@
+// Estilos globales de WolfTeI-autogestion (Desktop App)
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+// Variables de diseño Premium Dark
+:root {
+  --bg-primary: #030308;
+  --bg-secondary: #0d0d15;
+  --bg-card: rgba(255, 255, 255, 0.02);
+  --border-card: rgba(255, 255, 255, 0.05);
+  
+  --color-primary: #667eea;
+  --color-secondary: #764ba2;
+  --color-text-main: #ffffff;
+  --color-text-muted: #b0b0cc;
+  --glow-color: rgba(102, 126, 234, 0.15);
+  
+  --font-family: 'Outfit', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none; // Evita selección de textos en la aplicación de escritorio
+  -webkit-user-select: none;
+  -webkit-user-drag: none; // Evita arrastre de imágenes
+  // REMOVIDO font-family universal para no romper la medición de muesca (notch) de Material 3
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--color-text-main);
+  margin: 0;
+  overflow: hidden; // Previene scrollbars en app de escritorio
+  height: 100vh;
+  width: 100vw;
+  font-family: var(--font-family), sans-serif; // Se define acá para herencia natural
+}
+
+// Estructura de barra de scroll premium
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+// Ocultar botones nativos de revelado de contraseña e inputs en Windows (WebView2 / Edge)
+::-ms-reveal, ::-ms-clear {
+  display: none !important;
+}

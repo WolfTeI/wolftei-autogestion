@@ -1,0 +1,105 @@
+<div class="dashboard-home">
+  <div class="home-header">
+    <div>
+      <h1>Panel de Control</h1>
+      <p class="subtitle">Resumen operativo y métricas financieras de WolfTeI</p>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" (click)="exportarCSV()" matTooltip="Exportar histórico a Excel / CSV">
+        <mat-icon>download</mat-icon> Exportar Balance
+      </button>
+      <button mat-flat-button color="primary" routerLink="/dashboard/propuestas/nueva">
+        <mat-icon>add</mat-icon> Nueva Propuesta
+      </button>
+    </div>
+  </div>
+
+  <!-- Métricas Principales -->
+  <div class="stats-grid">
+    @for (stat of stats; track stat.title) {
+      <mat-card class="stat-card">
+        <div
+          class="icon-wrapper"
+          [style.background-color]="stat.color + '20'"
+          [style.color]="stat.color"
+        >
+          <mat-icon>{{ stat.icon }}</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="count">{{ stat.count }}</span>
+          <span class="title">{{ stat.title }}</span>
+        </div>
+      </mat-card>
+    }
+  </div>
+
+  <!-- KPIs Financieros y de Conversión -->
+  <div class="financial-section">
+    <mat-card class="kpi-card conversion">
+      <div class="kpi-icon-wrap">
+        <mat-icon>trending_up</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Tasa de Conversión</span>
+        <strong class="kpi-val">{{ tasaConversion }}%</strong>
+        <small class="kpi-sub">Presupuestos aceptados sobre el total emitido</small>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card usd">
+      <div class="kpi-icon-wrap">
+        <mat-icon>monetization_on</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Contratado en Dólares</span>
+        <strong class="kpi-val">{{ totalContratadoUSD | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+        <small class="kpi-sub">Total de contratos cerrados en divisa extranjera</small>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card ars">
+      <div class="kpi-icon-wrap">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Contratado en Pesos</span>
+        <strong class="kpi-val">{{ totalContratadoARS | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</strong>
+        <small class="kpi-sub">Total de contratos cerrados en moneda local</small>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Accesos Rápidos Operativos -->
+  <div class="quick-access-section">
+    <h2>Operaciones Frecuentes</h2>
+    <div class="quick-grid">
+      <mat-card class="quick-card" routerLink="/dashboard/propuestas">
+        <mat-icon color="primary">description</mat-icon>
+        <div class="quick-text">
+          <h3>Propuestas Comerciales</h3>
+          <p>Gestionar presupuestos, registrar cobros y descargar PDF</p>
+        </div>
+        <mat-icon class="arrow-icon">chevron_right</mat-icon>
+      </mat-card>
+
+      <mat-card class="quick-card" routerLink="/dashboard/proyectos">
+        <mat-icon style="color: #8b5cf6;">view_kanban</mat-icon>
+        <div class="quick-text">
+          <h3>Tablero de Proyectos</h3>
+          <p>Seguimiento ágil en Kanban y solicitud de encuestas post-entrega</p>
+        </div>
+        <mat-icon class="arrow-icon">chevron_right</mat-icon>
+      </mat-card>
+
+      <mat-card class="quick-card" routerLink="/dashboard/clientes">
+        <mat-icon style="color: #10b981;">people</mat-icon>
+        <div class="quick-text">
+          <h3>Directorio de Clientes</h3>
+          <p>CRM, contacto directo por WhatsApp y Contratos Marco con NDA</p>
+        </div>
+        <mat-icon class="arrow-icon">chevron_right</mat-icon>
+      </mat-card>
+    </div>
+  </div>
+</div>

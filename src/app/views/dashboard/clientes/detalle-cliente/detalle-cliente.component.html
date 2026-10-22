@@ -1,0 +1,112 @@
+<div class="page-container">
+  <div class="header-actions">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Perfil del Cliente</h1>
+    <span class="spacer"></span>
+    @if (cliente?.phone) {
+      <button mat-stroked-button (click)="contactarWhatsApp()" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4); margin-right: 8px;">
+        <mat-icon style="color: #10b981;">chat</mat-icon>
+        WhatsApp
+      </button>
+    }
+    <button mat-stroked-button [matMenuTriggerFor]="legalMenu" style="margin-right: 8px;" matTooltip="Descargar instrumentos legales en PDF">
+      <mat-icon>gavel</mat-icon>
+      Documentos Legales
+      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #legalMenu="matMenu">
+      <button mat-menu-item (click)="descargarContrato()">
+        <mat-icon>description</mat-icon>
+        <span>Contrato de Desarrollo (PDF)</span>
+      </button>
+      <button mat-menu-item (click)="descargarNDA()">
+        <mat-icon>lock</mat-icon>
+        <span>Acuerdo Confidencialidad NDA (PDF)</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="descargarAmbos()">
+        <mat-icon>folder_open</mat-icon>
+        <span>Descargar Ambos Instrumentos</span>
+      </button>
+    </mat-menu>
+    <button mat-flat-button color="accent" disabled>
+      <mat-icon>edit</mat-icon>
+      Editar
+    </button>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading-shade">
+      <mat-spinner></mat-spinner>
+    </div>
+  } @else if (cliente) {
+    <div class="dashboard-grid">
+      
+      <!-- Ficha del Cliente -->
+      <mat-card class="client-card">
+        <mat-card-header>
+          <div mat-card-avatar class="client-avatar">
+            <mat-icon>business</mat-icon>
+          </div>
+          <mat-card-title>{{ cliente.name }}</mat-card-title>
+          <mat-card-subtitle>{{ cliente.company || 'Particular' }}</mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-divider></mat-divider>
+        
+        <mat-card-content class="client-details">
+          <p><mat-icon>email</mat-icon> {{ cliente.email }}</p>
+          <p><mat-icon>phone</mat-icon> {{ cliente.phone || 'No registrado' }}</p>
+          <p><mat-icon>location_on</mat-icon> {{ cliente.address || 'No registrado' }}</p>
+          <p><mat-icon>receipt</mat-icon> CUIT/RUT: {{ cliente.taxId || 'No registrado' }}</p>
+
+          <div class="reputation-box">
+            <h3>Reputación</h3>
+            @if (cliente.reviewsCount && cliente.reviewsCount > 0) {
+              <div class="score">
+                <mat-icon color="accent">star</mat-icon>
+                <span class="number">{{ cliente.reputationScore | number:'1.1-1' }}</span>
+                <span class="count">({{ cliente.reviewsCount }} reseñas)</span>
+              </div>
+            } @else {
+              <p class="text-muted">Aún no hay reseñas registradas para este cliente.</p>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Historial de Proyectos -->
+      <mat-card class="projects-card">
+        <mat-card-header>
+          <mat-card-title>Historial de Proyectos</mat-card-title>
+        </mat-card-header>
+        
+        <mat-divider></mat-divider>
+        
+        <mat-card-content>
+          @if (proyectos.length === 0) {
+            <p class="text-muted empty-projects">No hay proyectos asociados a este cliente.</p>
+          } @else {
+            <mat-list>
+              @for (proyecto of proyectos; track proyecto.id) {
+                <mat-list-item>
+                  <mat-icon matListItemIcon>folder</mat-icon>
+                  <div matListItemTitle>{{ proyecto.title }}</div>
+                  <div matListItemLine>Fase actual: {{ proyecto.currentPhase }}</div>
+                  <div matListItemMeta>
+                    <mat-chip [color]="getStatusColor(proyecto.status)" selected>
+                      {{ proyecto.status | uppercase }}
+                    </mat-chip>
+                  </div>
+                </mat-list-item>
+              }
+            </mat-list>
+          }
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+  }
+</div>

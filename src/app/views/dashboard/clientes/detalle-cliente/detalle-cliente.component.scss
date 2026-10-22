@@ -1,0 +1,112 @@
+.page-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+  }
+  
+  .spacer {
+    flex: 1 1 auto;
+  }
+}
+
+.loading-shade {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.client-card {
+  .client-avatar {
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    
+    mat-icon {
+      font-size: 24px;
+      color: #fff;
+    }
+  }
+
+  .client-details {
+    padding-top: 16px;
+    
+    p {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      
+      mat-icon {
+        color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+
+  .reputation-box {
+    margin-top: 24px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .number {
+        font-size: 24px;
+        font-weight: bold;
+      }
+      
+      .count {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+.projects-card {
+  .empty-projects {
+    padding: 24px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

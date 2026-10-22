@@ -1,0 +1,92 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <div class="header-title">
+      <mat-icon color="primary">person_add</mat-icon>
+      <h2 mat-dialog-title>Nuevo Cliente</h2>
+    </div>
+    <button mat-icon-button type="button" (click)="cancelar()" [disabled]="guardando">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <p class="dialog-subtitle">Completá los datos para registrar al cliente en la base de datos.</p>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="cliente-form" id="clienteForm">
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-full">
+          <mat-label>Nombre completo o Razón Social</mat-label>
+          <input matInput formControlName="name" placeholder="Ej: Juan Pérez o Acme Corp" required>
+          <mat-icon matPrefix>badge</mat-icon>
+          @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+            <mat-error>El nombre es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="form-row two-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Empresa</mat-label>
+          <input matInput formControlName="company" placeholder="Ej: Acme S.A.">
+          <mat-icon matPrefix>business</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CUIT / CUIT / Tax ID</mat-label>
+          <input matInput formControlName="taxId" placeholder="Ej: 30-71234567-8">
+          <mat-icon matPrefix>pin</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row two-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Email de contacto</mat-label>
+          <input matInput type="email" formControlName="email" placeholder="cliente@correo.com" required>
+          <mat-icon matPrefix>email</mat-icon>
+          @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+            <mat-error>El email es obligatorio.</mat-error>
+          }
+          @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
+            <mat-error>Ingresá un email válido.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono / WhatsApp</mat-label>
+          <input matInput formControlName="phone" placeholder="Ej: +54 9 11 1234-5678">
+          <mat-icon matPrefix>phone</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-full">
+          <mat-label>Dirección / Localidad</mat-label>
+          <input matInput formControlName="address" placeholder="Ej: Av. Santa Fe 1234, CABA">
+          <mat-icon matPrefix>location_on</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-full">
+          <mat-label>Notas adicionales / Observaciones</mat-label>
+          <textarea matInput formControlName="notes" rows="3" placeholder="Comentarios sobre el cliente, requerimientos o preferencias..."></textarea>
+          <mat-icon matPrefix>notes</mat-icon>
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancelar()" [disabled]="guardando">
+      Cancelar
+    </button>
+    <button mat-flat-button color="primary" type="submit" form="clienteForm" [disabled]="guardando">
+      @if (guardando) {
+        <mat-spinner diameter="18" class="button-spinner"></mat-spinner>
+      } @else {
+        <mat-icon>save</mat-icon>
+      }
+      <span>{{ guardando ? 'Guardando...' : 'Guardar Cliente' }}</span>
+    </button>
+  </mat-dialog-actions>
+</div>

@@ -1,0 +1,63 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <img src="assets/Lobo_Blanco.webp" alt="WolfTeI" class="logo" />
+      <h1>Bienvenido</h1>
+      <p>Inicia sesión para administrar el sitio</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Usuario</mat-label>
+        <input
+          matInput
+          formControlName="username"
+          placeholder="Ingresa tu usuario"
+        />
+        <mat-icon matPrefix>person</mat-icon>
+        @if (loginForm.get("username")?.hasError("required")) {
+          <mat-error>Usuario requerido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Contraseña</mat-label>
+        <input
+          matInput
+          [type]="hidePassword ? 'password' : 'text'"
+          formControlName="password"
+        />
+        <mat-icon matPrefix>lock</mat-icon>
+        <button
+          mat-icon-button
+          matSuffix
+          (click)="hidePassword = !hidePassword"
+          type="button"
+        >
+          <mat-icon>{{
+            hidePassword ? "visibility_off" : "visibility"
+          }}</mat-icon>
+        </button>
+        @if (loginForm.get("password")?.hasError("required")) {
+          <mat-error>Contraseña requerida</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="actions">
+        @if (loading) {
+          <mat-spinner diameter="40" color="accent"></mat-spinner>
+        } @else {
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="loginForm.invalid"
+            class="submit-btn"
+          >
+            Iniciar Sesión
+          </button>
+        }
+      </div>
+    </form>
+  </div>
+</div>

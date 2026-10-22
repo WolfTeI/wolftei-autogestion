@@ -1,0 +1,156 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <div class="header-title">
+      <mat-icon color="primary">payments</mat-icon>
+      <h2 mat-dialog-title>Registrar Pago / Cobro</h2>
+    </div>
+    <button mat-icon-button type="button" (click)="cancelar()" [disabled]="guardando">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <div class="cliente-badge">
+      <span>Cliente: <strong>{{ data.clientName }}</strong></span>
+      <span class="saldo-info">Saldo pendiente: <strong>{{ data.saldoPendiente | currency: data.currency : 'symbol' : '1.0-0' }} {{ data.currency }}</strong></span>
+    </div>
+
+    <!-- Botones rápidos de Porcentaje -->
+    <div class="preset-buttons">
+      <button type="button" mat-stroked-button (click)="setPorcentaje(50)" [class.active-preset]="porcentajeCalculado === 50">
+        50% Anticipo
+      </button>
+      <button type="button" mat-stroked-button (click)="setPorcentaje(30)" [class.active-preset]="porcentajeCalculado === 30">
+        30% Seña
+      </button>
+      <button type="button" mat-stroked-button (click)="setSaldoRestante()" [class.active-preset]="currentAmount === data.saldoPendiente && data.saldoPendiente > 0">
+        Saldo Restante
+      </button>
+      <button type="button" mat-stroked-button (click)="setPorcentaje(100)">
+        100% Total
+      </button>
+    </div>
+
+    <!-- Caja de Resumen en Vivo -->
+    <div class="calculo-live-card">
+      <div class="calc-item">
+        <span class="calc-label">Total Proyecto</span>
+        <span class="calc-val">{{ data.totalAmount | currency: data.currency : 'symbol' : '1.0-0' }} {{ data.currency }}</span>
+      </div>
+      <div class="calc-arrow">→</div>
+      <div class="calc-item highlight">
+        <span class="calc-label">Cobro Actual ({{ porcentajeCalculado }}%)</span>
+        <span class="calc-val">{{ currentAmount | currency: data.currency : 'symbol' : '1.0-0' }} {{ data.currency }}</span>
+      </div>
+      <div class="calc-arrow">=</div>
+      <div class="calc-item remainder">
+        <span class="calc-label">Resta Pagar</span>
+        <span class="calc-val">{{ saldoRestanteCalculado | currency: data.currency : 'symbol' : '1.0-0' }} {{ data.currency }}</span>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="pago-form" id="pagoForm">
+      
+      <div class="form-row two-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Monto a Registrar</mat-label>
+          <input matInput type="number" formControlName="amount" min="1" required>
+          <mat-icon matPrefix>attach_money</mat-icon>
+          @if (form.get('amount')?.hasError('required') && form.get('amount')?.touched) {
+            <mat-error>El monto es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Moneda</mat-label>
+          <mat-select formControlName="currency">
+            <mat-option value="USD">USD (Dólares)</mat-option>
+            <mat-option value="ARS">ARS (Pesos Arg)</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row two-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Concepto del Pago</mat-label>
+          <mat-select formControlName="concept">
+            <mat-option value="anticipo">50% Anticipo Inicial</mat-option>
+            <mat-option value="saldo">50% Saldo contra entrega</mat-option>
+            <mat-option value="total">100% Pago Total</mat-option>
+            <mat-option value="cuota">Cuota de Proyecto</mat-option>
+            <mat-option value="otro">Otro Concepto</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Medio de Pago</mat-label>
+          <mat-select formControlName="paymentMethod">
+            <mat-option value="transferencia">Transferencia Bancaria</mat-option>
+            <mat-option value="usdt">Cripto (USDT / Binance)</mat-option>
+            <mat-option value="mercadopago">Mercado Pago</mat-option>
+            <mat-option value="efectivo">Efectivo / Cash</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row two-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de Cambio / Cotización Dólar</mat-label>
+          <input matInput type="number" formControlName="exchangeRate" min="1">
+          <mat-icon matPrefix>trending_up</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>N° Recibo / Comprobante (Opcional)</mat-label>
+          <input matInput formControlName="receiptNumber" placeholder="Dejar vacío para autogenerar">
+          <mat-icon matPrefix>tag</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-full">
+          <mat-label>Observaciones / Nro de Transferencia</mat-label>
+          <textarea matInput formControlName="notes" rows="2" placeholder="Ej: Transferencia Banco Galicia nro 893412..."></textarea>
+          <mat-icon matPrefix>notes</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Firma Real del Prestador -->
+      <div class="firma-box">
+        <div class="firma-info">
+          <img [src]="obtenerPreviewFirma()" alt="Firma Carlos Prost" class="firma-thumb">
+          <div>
+            <strong>Firma Real (Carlos Alberto Prost)</strong>
+            <p>{{ tieneFirmaPersonalizada() ? 'Firma personalizada activa. Se estampará en los recibos.' : 'Firma oficial por defecto activa. Se estampará en los recibos.' }}</p>
+          </div>
+        </div>
+        <div class="firma-actions">
+          <input type="file" #firmaInput accept="image/png,image/jpeg,image/webp" style="display: none" (change)="cargarFirmaArchivo($event)">
+          <button type="button" mat-stroked-button (click)="firmaInput.click()">
+            <mat-icon>upload_file</mat-icon> {{ tieneFirmaPersonalizada() ? 'Cambiar Firma' : 'Cargar Otra (PNG)' }}
+          </button>
+          @if (tieneFirmaPersonalizada()) {
+            <button type="button" mat-icon-button color="warn" (click)="restablecerFirmaOficial()" matTooltip="Restablecer a la firma oficial por defecto">
+              <mat-icon>restart_alt</mat-icon>
+            </button>
+          }
+        </div>
+      </div>
+
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button type="button" (click)="cancelar()" [disabled]="guardando">
+      Cancelar
+    </button>
+    <button mat-flat-button color="primary" type="submit" form="pagoForm" [disabled]="guardando">
+      @if (guardando) {
+        <mat-spinner diameter="18" class="button-spinner"></mat-spinner>
+      } @else {
+        <mat-icon>check_circle</mat-icon>
+      }
+      <span>{{ guardando ? 'Registrando...' : 'Confirmar Cobro' }}</span>
+    </button>
+  </mat-dialog-actions>
+</div>

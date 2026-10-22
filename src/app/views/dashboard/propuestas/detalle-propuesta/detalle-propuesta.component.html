@@ -1,0 +1,306 @@
+<div class="detalle-container">
+  @if (cargando()) {
+    <div class="loading-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando propuesta...</p>
+    </div>
+  } @else if (propuesta(); as p) {
+
+    <!-- Header -->
+    <div class="page-header">
+      <button mat-icon-button (click)="volver()" matTooltip="Volver al listado">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-info">
+        <h1>{{ p.title }}</h1>
+        <p class="subtitle">{{ p.clientPreviewName }}</p>
+      </div>
+      <span class="status-chip" [style.color]="getStatusColor(p.status ?? '')" [style.border-color]="getStatusColor(p.status ?? '')">
+        {{ getStatusLabel(p.status ?? '') }}
+      </span>
+      <div class="header-actions">
+        <button mat-stroked-button (click)="enviarPorWhatsApp()" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4);" matTooltip="Enviar link y propuesta por WhatsApp">
+          <mat-icon style="color: #10b981;">chat</mat-icon> WhatsApp
+        </button>
+        <button mat-stroked-button (click)="editarPropuesta()">
+          <mat-icon>edit</mat-icon> Editar Presupuesto
+        </button>
+        <button mat-stroked-button (click)="copiarLink()">
+          <mat-icon>link</mat-icon> Copiar Link
+        </button>
+        <button mat-stroked-button [matMenuTriggerFor]="legalDocMenu" matTooltip="Descargar Contrato o NDA para esta propuesta">
+          <mat-icon>gavel</mat-icon> Legal
+          <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #legalDocMenu="matMenu">
+          <button mat-menu-item (click)="descargarContrato()">
+            <mat-icon>description</mat-icon>
+            <span>Contrato de Desarrollo (PDF)</span>
+          </button>
+          <button mat-menu-item (click)="descargarNDA()">
+            <mat-icon>lock</mat-icon>
+            <span>Acuerdo Confidencialidad NDA (PDF)</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="descargarAmbosDocumentos()">
+            <mat-icon>folder_open</mat-icon>
+            <span>Descargar Ambos Instrumentos</span>
+          </button>
+        </mat-menu>
+        <button mat-flat-button color="primary" (click)="descargarPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> Descargar PDF
+        </button>
+        @if (p.pricingDetails) {
+          <button mat-flat-button color="accent" (click)="revivirPropuesta()" [disabled]="actualizandoPrecio()">
+            @if (actualizandoPrecio()) {
+              <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            } @else {
+              <mat-icon>autorenew</mat-icon>
+            }
+            Revivir / Act. Precio
+          </button>
+        }
+        <button mat-icon-button [matMenuTriggerFor]="estadoMenu" matTooltip="Cambiar estado">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #estadoMenu="matMenu">
+          @for (e of estadosValidos; track e.value) {
+            <button mat-menu-item (click)="cambiarEstado(e.value)" [disabled]="p.status === e.value">
+              <span class="dot" [style.background]="e.color"></span>
+              {{ e.label }}
+            </button>
+          }
+        </mat-menu>
+      </div>
+    </div>
+
+    <!-- Grid de info -->
+    <div class="detail-grid">
+
+      <!-- Carpeta de Documentación & Firma (Presencial o Remota) -->
+      <mat-card class="docs-kit-card full-width">
+        <div class="docs-kit-content">
+          <div class="docs-kit-info">
+            <div class="kit-badge">
+              <mat-icon>folder_special</mat-icon>
+              <span>Carpeta de Documentación Oficial</span>
+            </div>
+            <h2>Instrumentos del Proyecto (Firma Presencial & Remota)</h2>
+            <p>Descargá la carpeta completa con todos los documentos en PDF para imprimir y llevar a firmar en mano, o compartí el enlace online seguro para firma digital con validez legal.</p>
+
+            <div class="kit-link-box">
+              <mat-icon>link</mat-icon>
+              <span class="kit-url">{{ getPublicUrl() }}</span>
+              <button mat-icon-button (click)="copiarLink()" matTooltip="Copiar link de propuesta">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+              <button mat-stroked-button (click)="enviarPorWhatsApp()" class="whatsapp-btn" matTooltip="Enviar link y propuesta por WhatsApp">
+                <mat-icon>chat</mat-icon> WhatsApp
+              </button>
+            </div>
+          </div>
+
+          <div class="docs-kit-actions">
+            <button mat-flat-button color="accent" class="print-kit-btn" (click)="descargarCarpetaCompleta()" matTooltip="Descargar Presupuesto + Contrato + NDA juntos para imprimir">
+              <mat-icon>print</mat-icon> Descargar Carpeta Completa (Imprimir)
+            </button>
+
+            <div class="individual-downloads">
+              <button mat-stroked-button (click)="descargarPDF()" matTooltip="Descargar Presupuesto Oficial">
+                <mat-icon>picture_as_pdf</mat-icon> Presupuesto
+              </button>
+              <button mat-stroked-button (click)="descargarContrato()" matTooltip="Descargar Contrato de Desarrollo">
+                <mat-icon>description</mat-icon> Contrato
+              </button>
+              <button mat-stroked-button (click)="descargarNDA()" matTooltip="Descargar Acuerdo NDA">
+                <mat-icon>lock</mat-icon> NDA
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Datos básicos -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title><mat-icon>info</mat-icon> Datos Generales</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <dl>
+            <dt>Token</dt><dd><code>{{ p.token }}</code></dd>
+            <dt>Emitida</dt><dd>{{ p.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+            <dt>Validez</dt><dd>{{ p.expiresAt | date: 'dd/MM/yyyy' }}</dd>
+            <dt>Inversión</dt><dd class="monto">{{ p.totalAmount | currency: p.currency : 'symbol' : '1.0-0' }} {{ p.currency }}</dd>
+            <dt>Forma de pago</dt><dd>{{ p.paymentTerms }}</dd>
+            <dt>Garantía</dt><dd>{{ p.warrantyDays }} días</dd>
+          </dl>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Specs Técnicas -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title><mat-icon>code</mat-icon> Specs Técnicas</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <dl>
+            <dt>Plataforma</dt><dd>{{ p.platform }}</dd>
+            <dt>Stack</dt><dd>{{ p.techStack }}</dd>
+            <dt>Persistencia</dt><dd>{{ p.persistence || '—' }}</dd>
+          </dl>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Objetivo -->
+      <mat-card class="info-card full-width">
+        <mat-card-header>
+          <mat-card-title><mat-icon>flag</mat-icon> Objetivo del Proyecto</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="objective-text">{{ p.objective }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Módulos -->
+      <mat-card class="info-card full-width">
+        <mat-card-header>
+          <mat-card-title><mat-icon>widgets</mat-icon> Alcance Funcional</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="modulos-list">
+            @for (m of p.modules; track i; let i = $index) {
+              <div class="modulo-item">
+                <span class="modulo-num">{{ i + 1 }}</span>
+                <div>
+                  <strong>{{ m.name }}</strong>
+                  @if (m.description) { <p>{{ m.description }}</p> }
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Cronograma -->
+      <mat-card class="info-card full-width">
+        <mat-card-header>
+          <mat-card-title><mat-icon>schedule</mat-icon> Cronograma</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="phases-list">
+            @for (f of p.phases; track i; let i = $index) {
+              <div class="phase-item">
+                <span class="phase-icon">
+                  <mat-icon>check_circle_outline</mat-icon>
+                </span>
+                <strong>{{ f.label }}</strong>
+                <span class="phase-weeks">{{ f.weeks }}</span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Cobranzas y Pagos -->
+      <mat-card class="info-card full-width pagos-card">
+        <mat-card-header>
+          <div class="pagos-header-row">
+            <mat-card-title><mat-icon>payments</mat-icon> Cobranzas y Pagos Registrados</mat-card-title>
+            <button mat-flat-button color="primary" (click)="abrirRegistrarPagoDialog()">
+              <mat-icon>add</mat-icon> Registrar Cobro
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          <!-- Resumen de Saldos -->
+          <div class="saldos-summary">
+            <div class="saldo-box">
+              <span class="box-label">Inversión Total</span>
+              <strong class="box-val">{{ p.totalAmount | currency: p.currency : 'symbol' : '1.0-0' }} {{ p.currency }}</strong>
+            </div>
+            <div class="saldo-box cobrado">
+              <span class="box-label">Total Cobrado</span>
+              <strong class="box-val">{{ totalPagado() | currency: p.currency : 'symbol' : '1.0-0' }} {{ p.currency }}</strong>
+            </div>
+            <div class="saldo-box pendiente">
+              <span class="box-label">Saldo Pendiente</span>
+              <strong class="box-val">{{ saldoPendiente() | currency: p.currency : 'symbol' : '1.0-0' }} {{ p.currency }}</strong>
+            </div>
+            <div class="saldo-box porcentaje">
+              <span class="box-label">Progreso de Pago</span>
+              <strong class="box-val">{{ porcentajePagado() }}%</strong>
+            </div>
+          </div>
+
+          <!-- Listado de Pagos -->
+          @if (pagos().length === 0) {
+            <div class="empty-pagos">
+              <mat-icon>receipt_long</mat-icon>
+              <p>Aún no se registraron pagos para este presupuesto.</p>
+              <button mat-stroked-button (click)="abrirRegistrarPagoDialog()">
+                Registrar primer cobro (Anticipo 50%)
+              </button>
+            </div>
+          } @else {
+            <div class="pagos-table-wrapper">
+              <table class="pagos-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>N° Recibo</th>
+                    <th>Concepto</th>
+                    <th>Medio</th>
+                    <th>Monto</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (pago of pagos(); track pago.id) {
+                    <tr>
+                      <td>{{ pago.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                      <td><code>{{ pago.receiptNumber || '-' }}</code></td>
+                      <td>
+                        <span class="concept-chip">{{ pago.concept | uppercase }}</span>
+                      </td>
+                      <td>{{ pago.paymentMethod | titlecase }}</td>
+                      <td>
+                        <strong>{{ pago.amount | currency: pago.currency : 'symbol' : '1.0-0' }} {{ pago.currency }}</strong>
+                      </td>
+                      <td>
+                        <button mat-icon-button color="primary" (click)="descargarRecibo(pago)" matTooltip="Descargar Recibo Oficial PDF">
+                          <mat-icon>picture_as_pdf</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" (click)="eliminarPago(pago)" matTooltip="Anular pago">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Aceptación del cliente (si existe) -->
+      @if (p.acceptedAt) {
+        <mat-card class="info-card full-width accepted-card">
+          <mat-card-header>
+            <mat-card-title><mat-icon>verified</mat-icon> Datos de Aceptación del Cliente</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <dl>
+              <dt>Nombre / Razón Social</dt><dd>{{ p.clientLegalName }}</dd>
+              <dt>CUIT / DNI</dt><dd>{{ p.clientTaxId }}</dd>
+              <dt>Domicilio</dt><dd>{{ p.clientAddress }}</dd>
+              <dt>Email de contacto</dt><dd>{{ p.clientEmail }}</dd>
+              <dt>Aceptado el</dt><dd>{{ p.acceptedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+            </dl>
+          </mat-card-content>
+        </mat-card>
+      }
+
+    </div>
+  }
+</div>

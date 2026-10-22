@@ -1,0 +1,165 @@
+.nueva-propuesta-container {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin: 4px 0 0;
+  }
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-section {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 16px !important;
+
+  mat-card-header {
+    margin-bottom: 16px;
+  }
+}
+
+// Layouts de campos
+.fields-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.field-full   { width: 100%; }
+.field-half   { flex: 1 1 calc(50% - 6px); min-width: 200px; }
+.field-third  { flex: 1 1 calc(33.333% - 8px); min-width: 180px; }
+.field-quarter { flex: 1 1 calc(25% - 9px); min-width: 140px; }
+
+// Lista de módulos/fases
+.modulos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.modulo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .field-modulo-name { flex: 0 0 220px; }
+  .field-modulo-desc { flex: 1; }
+}
+
+.add-item-btn {
+  width: 100%;
+  border-radius: 10px !important;
+  border-style: dashed !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--color-text-muted);
+
+  &:hover {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary);
+  }
+}
+
+// Preview de monto
+.monto-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  padding: 12px 20px;
+  color: white;
+  font-size: 0.95rem;
+
+  mat-icon { color: var(--color-primary); }
+
+  strong {
+    font-size: 1.2rem;
+    color: #a78bfa;
+    font-weight: 700;
+  }
+
+  .anticipo {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin-left: 8px;
+  }
+}
+
+// Acciones
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  .submit-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    padding: 0 28px;
+    height: 44px;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+    }
+  }
+}
+
+.spinner-inline {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.internal-calc {
+  background: rgba(102, 126, 234, 0.05) !important;
+  border: 1px dashed rgba(102, 126, 234, 0.3) !important;
+
+  mat-card-header {
+    mat-icon {
+      color: #a78bfa;
+    }
+  }
+}
+
+.field-calc {
+  flex: 1 1 calc(20% - 10px);
+  min-width: 130px;
+}
+
+.field-modulo-hours {
+  flex: 0 0 100px;
+}
+
+.descuento-aplicado { color: #10b981; font-weight: 500; font-size: 0.9em; margin-left: 10px; }
+.preview-details { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

@@ -1,0 +1,137 @@
+<div class="propuestas-container">
+  <div class="page-header">
+    <div class="header-left">
+      <mat-icon class="section-icon">description</mat-icon>
+      <div>
+        <h1>Propuestas Comerciales</h1>
+        <p class="subtitle">Gestioná el ciclo de vida de cada presupuesto y contrato</p>
+      </div>
+    </div>
+    <button mat-fab extended color="primary" routerLink="nueva" class="new-btn">
+      <mat-icon>add</mat-icon>
+      Nueva Propuesta
+    </button>
+  </div>
+
+  <!-- Filtros de estado -->
+  <div class="filters-bar">
+    @for (f of filtros; track f.value) {
+      <button
+        mat-stroked-button
+        [class.active]="filtroActivo === f.value"
+        (click)="setFiltro(f.value)"
+      >
+        <span class="badge" [style.background]="f.color">{{ f.count }}</span>
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Tabla de propuestas -->
+  <div class="table-wrapper mat-elevation-z4">
+    @if (cargando()) {
+      <div class="loading-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Cargando propuestas...</p>
+      </div>
+    } @else if (propuestasFiltradas.length === 0) {
+      <div class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <p>No hay propuestas en este estado.</p>
+        <button mat-stroked-button routerLink="nueva">Crear la primera</button>
+      </div>
+    } @else {
+      <table mat-table [dataSource]="propuestasFiltradas" class="propuestas-table">
+
+        <!-- Nro Column -->
+        <ng-container matColumnDef="numero">
+          <th mat-header-cell *matHeaderCellDef>N°</th>
+          <td mat-cell *matCellDef="let p; let i = index">
+            <span class="numero">P-{{ (i + 1).toString().padStart(3, '0') }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Cliente Column -->
+        <ng-container matColumnDef="cliente">
+          <th mat-header-cell *matHeaderCellDef>Cliente / Proyecto</th>
+          <td mat-cell *matCellDef="let p">
+            <div class="cliente-cell">
+              <span class="cliente-name">{{ p.clientPreviewName }}</span>
+              <span class="proyecto-name">{{ p.title }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Monto Column -->
+        <ng-container matColumnDef="monto">
+          <th mat-header-cell *matHeaderCellDef>Inversión</th>
+          <td mat-cell *matCellDef="let p">
+            <span class="monto">{{ p.totalAmount | currency: p.currency : 'symbol' : '1.0-0' }}</span>
+            <span class="currency-badge">{{ p.currency }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Estado Column -->
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let p">
+            <span class="status-chip" [class]="'status-' + p.status">
+              {{ getStatusLabel(p.status) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Fecha Column -->
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Emitida</th>
+          <td mat-cell *matCellDef="let p">
+            {{ p.createdAt | date: 'dd/MM/yyyy' }}
+          </td>
+        </ng-container>
+
+        <!-- Acciones Column -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let p">
+            <div class="acciones">
+              <button mat-icon-button [matTooltip]="'Ver detalle'" (click)="verDetalle(p); $event.stopPropagation()">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button [matTooltip]="'Editar presupuesto'" (click)="editarPropuesta(p); $event.stopPropagation()">
+                <mat-icon color="primary">edit</mat-icon>
+              </button>
+              <button mat-icon-button [matTooltip]="'Copiar link del cliente'" (click)="copiarLink(p.token); $event.stopPropagation()">
+                <mat-icon>link</mat-icon>
+              </button>
+              <button mat-icon-button [matTooltip]="'Más opciones'" [matMenuTriggerFor]="menuEstado" (click)="$event.stopPropagation()">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menuEstado="matMenu">
+                <button mat-menu-item (click)="editarPropuesta(p)">
+                  <mat-icon color="primary">edit</mat-icon>
+                  Editar Presupuesto
+                </button>
+                <mat-divider></mat-divider>
+                @for (estado of estadosValidos; track estado.value) {
+                  <button mat-menu-item (click)="cambiarEstado(p, estado.value)" [disabled]="p.status === estado.value">
+                    <mat-icon [style.color]="estado.color">{{ estado.icon }}</mat-icon>
+                    {{ estado.label }}
+                  </button>
+                }
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="eliminar(p)" class="danger-item">
+                  <mat-icon color="warn">delete</mat-icon>
+                  Eliminar
+                </button>
+              </mat-menu>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" class="table-row" (click)="verDetalle(row)"></tr>
+      </table>
+    }
+  </div>
+</div>
+

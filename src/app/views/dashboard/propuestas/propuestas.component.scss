@@ -1,0 +1,200 @@
+.propuestas-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .section-icon {
+      font-size: 2.4rem;
+      width: 2.4rem;
+      height: 2.4rem;
+      color: var(--color-primary);
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin: 0;
+      color: white;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      margin: 4px 0 0;
+    }
+  }
+
+  .new-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+    }
+  }
+}
+
+// Barra de filtros
+.filters-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 20px !important;
+    font-size: 0.8rem;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--color-text-muted);
+    transition: all 0.2s;
+
+    &.active {
+      border-color: var(--color-primary) !important;
+      color: var(--color-primary);
+      background: rgba(102, 126, 234, 0.08);
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+      color: white;
+      min-width: 20px;
+      text-align: center;
+    }
+  }
+}
+
+// Tabla
+.table-wrapper {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.propuestas-table {
+  width: 100%;
+  background: transparent;
+
+  .mat-mdc-header-row {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .mat-mdc-row {
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+      background: rgba(102, 126, 234, 0.06);
+    }
+  }
+}
+
+.numero {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.cliente-cell {
+  display: flex;
+  flex-direction: column;
+
+  .cliente-name {
+    font-weight: 600;
+    color: white;
+    font-size: 0.92rem;
+  }
+
+  .proyecto-name {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.monto {
+  font-weight: 700;
+  color: #a78bfa;
+  font-size: 0.95rem;
+}
+
+.currency-badge {
+  margin-left: 4px;
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+// Status chips
+.status-chip {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.status-borrador    { background: rgba(136,136,136,0.15); color: #aaa; }
+.status-enviado     { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+.status-visto       { background: rgba(59,130,246,0.15);  color: #60a5fa; }
+.status-aceptado    { background: rgba(16,185,129,0.15);  color: #34d399; }
+.status-en_desarrollo { background: rgba(139,92,246,0.15); color: #a78bfa; }
+.status-finalizado  { background: rgba(107,114,128,0.15); color: #9ca3af; }
+.status-cancelado   { background: rgba(239,68,68,0.15);   color: #f87171; }
+
+// Acciones
+.acciones {
+  display: flex;
+  gap: 2px;
+}
+
+.danger-item {
+  color: #f87171;
+}
+
+// Estados vacíos
+.empty-state, .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 12px;
+  color: var(--color-text-muted);
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    opacity: 0.3;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}

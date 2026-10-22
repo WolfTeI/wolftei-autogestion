@@ -1,0 +1,87 @@
+<div class="page-container">
+  <div class="header-actions">
+    <h1>Directorio de Clientes</h1>
+    <button mat-flat-button color="primary" (click)="abrirNuevoClienteDialog()">
+      <mat-icon>person_add</mat-icon>
+      Nuevo Cliente
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner></mat-spinner>
+    </div>
+  } @else if (clientes().length === 0) {
+    <mat-card class="empty-state">
+      <mat-card-content>
+        <mat-icon>people_outline</mat-icon>
+        <p>No hay clientes registrados aún.</p>
+        <button mat-stroked-button color="primary" (click)="abrirNuevoClienteDialog()">
+          Agregar mi primer cliente
+        </button>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card>
+      <table mat-table [dataSource]="clientes()" class="clientes-table">
+        
+        <!-- Nombre Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef> Cliente </th>
+          <td mat-cell *matCellDef="let element"> 
+            <strong>{{element.name}}</strong>
+          </td>
+        </ng-container>
+
+        <!-- Empresa Column -->
+        <ng-container matColumnDef="company">
+          <th mat-header-cell *matHeaderCellDef> Empresa / CUIT </th>
+          <td mat-cell *matCellDef="let element"> 
+            {{element.company || 'N/A'}} <br>
+            <small class="text-muted">{{element.taxId}}</small>
+          </td>
+        </ng-container>
+
+        <!-- Email Column -->
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef> Email </th>
+          <td mat-cell *matCellDef="let element"> {{element.email}} </td>
+        </ng-container>
+
+        <!-- Phone Column -->
+        <ng-container matColumnDef="phone">
+          <th mat-header-cell *matHeaderCellDef> Teléfono </th>
+          <td mat-cell *matCellDef="let element"> {{element.phone || '-'}} </td>
+        </ng-container>
+
+        <!-- Reputación Column -->
+        <ng-container matColumnDef="reputation">
+          <th mat-header-cell *matHeaderCellDef> Reputación </th>
+          <td mat-cell *matCellDef="let element"> 
+            @if (element.reviewsCount > 0) {
+              <div class="reputation-score" [matTooltip]="element.reviewsCount + ' reseña(s)'">
+                <mat-icon color="accent">star</mat-icon>
+                <span>{{ element.reputationScore | number:'1.1-1' }}</span>
+              </div>
+            } @else {
+              <span class="text-muted text-small">Sin reseñas</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef> Acciones </th>
+          <td mat-cell *matCellDef="let element">
+            <button mat-icon-button color="primary" (click)="verDetalle(element.id)" matTooltip="Ver perfil">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row"></tr>
+      </table>
+    </mat-card>
+  }
+</div>

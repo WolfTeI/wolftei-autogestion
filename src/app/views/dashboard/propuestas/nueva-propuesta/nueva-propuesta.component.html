@@ -1,0 +1,334 @@
+<div class="nueva-propuesta-container">
+  <div class="page-header">
+    <button mat-icon-button routerLink="/dashboard/propuestas" matTooltip="Volver al listado">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div>
+      <h1>{{ esEdicion ? 'Editar Presupuesto' : 'Nueva Propuesta' }}</h1>
+      <p class="subtitle">{{ esEdicion ? 'Modificá los alcances, costos y especificaciones del presupuesto' : 'Completá los datos para generar el presupuesto' }}</p>
+    </div>
+  </div>
+
+  @if (cargandoDatos) {
+    <div class="loading-state" style="text-align: center; padding: 40px;">
+      <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+      <p style="margin-top: 16px; color: #888;">Cargando datos del presupuesto...</p>
+    </div>
+  } @else {
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
+
+    <!-- SECCIÓN: Datos del Cliente -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>person</mat-icon>
+        <mat-card-title>Datos del Cliente</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="fields-row">
+        <mat-form-field appearance="outline" class="field-half">
+          <mat-label>Buscar Cliente Registrado (o escribir nuevo)</mat-label>
+          <mat-icon matPrefix>business</mat-icon>
+          <input matInput type="text" formControlName="clientPreviewName" [matAutocomplete]="autoClient" placeholder="Ej: Distribuidora San Martín">
+          <mat-autocomplete #autoClient="matAutocomplete" [displayWith]="displayClienteFn" (optionSelected)="onClienteSelected($event)">
+            @for (cliente of filteredClientes | async; track cliente.id) {
+              <mat-option [value]="cliente">
+                {{cliente.name}} <small class="text-muted">({{cliente.company}})</small>
+              </mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-half">
+          <mat-label>Email del cliente</mat-label>
+          <mat-icon matPrefix>email</mat-icon>
+          <input matInput formControlName="clientPreviewEmail" type="email" placeholder="cliente@empresa.com" />
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- SECCIÓN: Proyecto -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>folder_open</mat-icon>
+        <mat-card-title>Descripción del Proyecto</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="field-full">
+          <mat-label>Título del proyecto</mat-label>
+          <mat-icon matPrefix>title</mat-icon>
+          <input matInput formControlName="title" placeholder="Ej: Sistema de Gestión de Stock y Facturación" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-full">
+          <mat-label>Objetivo y diagnóstico</mat-label>
+          <mat-icon matPrefix>flag</mat-icon>
+          <textarea matInput formControlName="objective" rows="3" placeholder="Describí brevemente qué problema resuelve el sistema..."></textarea>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- SECCIÓN: Módulos del Alcance -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>widgets</mat-icon>
+        <mat-card-title>Alcance Funcional</mat-card-title>
+        <mat-card-subtitle>Módulos y características del sistema</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="modulos-list" formArrayName="modules">
+          @for (modulo of modulesArray.controls; track i; let i = $index) {
+            <div class="modulo-row" [formGroupName]="i">
+              <mat-form-field appearance="outline" class="field-modulo-name">
+                <mat-label>Módulo {{ i + 1 }}</mat-label>
+                <input matInput formControlName="name" placeholder="Ej: Autenticación y Usuarios" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field-modulo-desc">
+                <mat-label>Descripción</mat-label>
+                <input matInput formControlName="description" placeholder="Qué hace este módulo..." />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field-modulo-hours">
+                <mat-label>Horas</mat-label>
+                <input matInput formControlName="estimatedHours" type="number" min="1" placeholder="Ej: 10" />
+              </mat-form-field>
+              <button mat-icon-button type="button" color="warn" (click)="quitarModulo(i)" [disabled]="modulesArray.length === 1">
+                <mat-icon>remove_circle_outline</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+        <button mat-stroked-button type="button" (click)="agregarModulo()" class="add-item-btn">
+          <mat-icon>add</mat-icon>
+          Agregar Módulo
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- SECCIÓN: Specs Técnicas -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>code</mat-icon>
+        <mat-card-title>Especificaciones Técnicas</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="fields-row">
+        <mat-form-field appearance="outline" class="field-third">
+          <mat-label>Tipo de plataforma</mat-label>
+          <mat-icon matPrefix>devices</mat-icon>
+          <mat-select formControlName="platform">
+            <mat-option value="WebApp">WebApp</mat-option>
+            <mat-option value="Software de Escritorio (Tauri)">Software de Escritorio (Tauri)</mat-option>
+            <mat-option value="App Android">App Android</mat-option>
+            <mat-option value="Landing Page">Landing Page</mat-option>
+            <mat-option value="Web Institucional">Web Institucional</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-third">
+          <mat-label>Stack tecnológico</mat-label>
+          <mat-icon matPrefix>build</mat-icon>
+          <input matInput formControlName="techStack" placeholder="Ej: Angular + Node.js + Firebase" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-third">
+          <mat-label>Base de datos / Persistencia</mat-label>
+          <mat-icon matPrefix>storage</mat-icon>
+          <input matInput formControlName="persistence" placeholder="Ej: Firestore / SQLite local" />
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- SECCIÓN: Cronograma -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>schedule</mat-icon>
+        <mat-card-title>Cronograma de Trabajo</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="modulos-list" formArrayName="phases">
+          @for (fase of phasesArray.controls; track i; let i = $index) {
+            <div class="modulo-row" [formGroupName]="i">
+              <mat-form-field appearance="outline" class="field-modulo-name">
+                <mat-label>Fase {{ i + 1 }}</mat-label>
+                <input matInput formControlName="label" placeholder="Ej: Diseño y Arquitectura" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field-modulo-desc">
+                <mat-label>Duración estimada</mat-label>
+                <input matInput formControlName="weeks" placeholder="Ej: Semana 1" />
+              </mat-form-field>
+              <button mat-icon-button type="button" color="warn" (click)="quitarFase(i)" [disabled]="phasesArray.length === 1">
+                <mat-icon>remove_circle_outline</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+        <button mat-stroked-button type="button" (click)="agregarFase()" class="add-item-btn">
+          <mat-icon>add</mat-icon>
+          Agregar Fase
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- SECCIÓN: Infraestructura -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>dns</mat-icon>
+        <mat-card-title>Costos Operativos / Infraestructura</mat-card-title>
+        <mat-card-subtitle>Hosting, dominios, licencias u otros costos fijos transparentes</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="modulos-list" formArrayName="infrastructureItems">
+          @for (item of infrastructureItemsArray.controls; track i; let i = $index) {
+            <div class="modulo-row" [formGroupName]="i">
+              <mat-form-field appearance="outline" class="field-modulo-name">
+                <mat-label>Descripción del Gasto</mat-label>
+                <input matInput formControlName="name" placeholder="Ej: Servidor Anual AWS" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field-modulo-hours">
+                <mat-label>Costo</mat-label>
+                <span matTextPrefix>$&nbsp;</span>
+                <input matInput formControlName="price" type="number" min="0" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field-modulo-hours">
+                <mat-label>Moneda</mat-label>
+                <mat-select formControlName="currency">
+                  <mat-option value="ARS">ARS</mat-option>
+                  <mat-option value="USD">USD</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <button mat-icon-button type="button" color="warn" (click)="quitarItemInfra(i)">
+                <mat-icon>remove_circle_outline</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+        @if (infrastructureItemsArray.length === 0) {
+          <p class="empty-state-text" style="color: #666; font-style: italic; margin-bottom: 15px;">No hay costos fijos configurados.</p>
+        }
+        <button mat-stroked-button type="button" (click)="agregarItemInfra()" class="add-item-btn">
+          <mat-icon>add</mat-icon>
+          Agregar Ítem
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- SECCIÓN: Calculadora Avanzada (Interno) -->
+    <mat-card class="form-section internal-calc" formGroupName="pricing">
+      <mat-card-header>
+        <mat-icon mat-card-avatar color="accent">calculate</mat-icon>
+        <mat-card-title>Calculadora Interna (No visible para el cliente)</mat-card-title>
+        <mat-card-subtitle>Ajustá tus márgenes y costos para que el sistema cotice solo</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="fields-row wrap">
+        <mat-form-field appearance="outline" class="field-calc">
+          <mat-label>Tu Valor Hora (USD)</mat-label>
+          <mat-icon matPrefix>payments</mat-icon>
+          <input matInput formControlName="baseRate" type="number" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-calc">
+          <mat-label>Margen Riesgo/Bugs (%)</mat-label>
+          <mat-icon matPrefix>bug_report</mat-icon>
+          <input matInput formControlName="riskMarginPercent" type="number" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-calc">
+          <mat-label>Gestión de Proyecto (%)</mat-label>
+          <mat-icon matPrefix>assignment</mat-icon>
+          <input matInput formControlName="pmMarginPercent" type="number" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-calc">
+          <mat-label>Margen Estudio/I+D (%)</mat-label>
+          <mat-icon matPrefix>school</mat-icon>
+          <input matInput formControlName="investigationMarginPercent" type="number" min="0" />
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- SECCIÓN: Inversión y Condiciones -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>payments</mat-icon>
+        <mat-card-title>Inversión y Condiciones Comerciales</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="fields-row">
+        <mat-form-field appearance="outline" class="field-quarter">
+          <mat-label>Monto total Calculado</mat-label>
+          <mat-icon matPrefix>attach_money</mat-icon>
+          <input matInput formControlName="totalAmount" type="number" readonly />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-quarter">
+          <mat-label>Moneda a mostrar</mat-label>
+          <mat-select formControlName="currency">
+            <mat-option value="ARS">ARS (Pesos)</mat-option>
+            <mat-option value="USD">USD (Dólares)</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-quarter">
+          <mat-label>Cotización de Dólar a usar</mat-label>
+          <mat-select formControlName="exchangeRateType">
+            @for (cotizacion of cotizacionesDolar; track cotizacion.casa) {
+              <mat-option [value]="cotizacion.casa">
+                {{ cotizacion.nombre }} (${{ cotizacion.venta }})
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-quarter">
+          <mat-label>Descuento Comercial (%)</mat-label>
+          <mat-icon matPrefix>money_off</mat-icon>
+          <input matInput formControlName="discountPercent" type="number" min="0" max="100" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-quarter">
+          <mat-label>Validez de la oferta (días)</mat-label>
+          <mat-icon matPrefix>event</mat-icon>
+          <input matInput formControlName="validDays" type="number" min="1" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-quarter">
+          <mat-label>Garantía (días)</mat-label>
+          <mat-icon matPrefix>verified_user</mat-icon>
+          <input matInput formControlName="warrantyDays" type="number" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-full">
+          <mat-label>Esquema de pagos</mat-label>
+          <mat-icon matPrefix>account_balance_wallet</mat-icon>
+          <input matInput formControlName="paymentTerms" placeholder="Ej: 50% anticipo / 50% contra entrega" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-full">
+          <mat-label>Notas adicionales (opcional)</mat-label>
+          <mat-icon matPrefix>notes</mat-icon>
+          <textarea matInput formControlName="notes" rows="2" placeholder="Observaciones, aclaraciones o condiciones específicas..."></textarea>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Preview del monto -->
+    @if (form.get('totalAmount')?.value) {
+      <div class="monto-preview">
+        <mat-icon>calculate</mat-icon>
+        <div class="preview-details">
+          <span>Inversión total:</span>
+          <strong>{{ form.get('totalAmount')?.value | currency: form.get('currency')?.value : 'symbol' : '1.0-0' }}</strong>
+          <span class="anticipo">→ Anticipo (50%): {{ form.get('totalAmount')?.value / 2 | currency: form.get('currency')?.value : 'symbol' : '1.0-0' }}</span>
+          
+          @if (form.get('discountPercent')?.value > 0) {
+            <span class="descuento-aplicado"> (Incluye descuento del {{ form.get('discountPercent')?.value }}%)</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Acciones -->
+    <div class="form-actions">
+      <button mat-stroked-button type="button" routerLink="/dashboard/propuestas">
+        <mat-icon>close</mat-icon> Cancelar
+      </button>
+      <button
+        mat-flat-button
+        type="submit"
+        color="primary"
+        class="submit-btn"
+        [disabled]="form.invalid || guardando"
+      >
+        <mat-icon>{{ esEdicion ? 'save' : 'send' }}</mat-icon>
+        {{ guardando ? "Guardando..." : (esEdicion ? "Guardar Cambios" : "Crear Propuesta") }}
+      </button>
+    </div>
+
+  </form>
+  }
+</div>
+
+
+

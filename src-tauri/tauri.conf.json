@@ -1,0 +1,44 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "wolftei-autogestion",
+  "version": "0.2.0",
+  "identifier": "ar.com.wolftei.autogestion",
+  "build": {
+    "beforeDevCommand": "npm run start",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist/wolftei-autogestion/browser"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "wolftei-autogestion",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUwMjU1MTBBQzQ1NDc4RjEKUldUeGVGVEVDbEVsNEhHOHgzK0t3U2VWV2pVaWs0dDJIY3R1ZmcvMmRPdGpOMVZwbmZ5ZjVZdEsK",
+      "endpoints": [
+        "https://github.com/WolfTeI/wolftei-autogestion/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

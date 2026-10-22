@@ -1,0 +1,74 @@
+.page-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+  }
+}
+
+.loading-shade {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 16px;
+  }
+  
+  p {
+    margin-bottom: 24px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.clientes-table {
+  width: 100%;
+
+  .element-row {
+    &:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  .text-muted {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .text-small {
+    font-size: 12px;
+  }
+
+  .reputation-score {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: bold;
+    
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}

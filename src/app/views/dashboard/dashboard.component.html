@@ -1,0 +1,86 @@
+<mat-drawer-container class="dashboard-container" autosize>
+  <mat-drawer #drawer mode="side" opened="true" class="dashboard-sidebar">
+    <div class="sidebar-header">
+      <img src="assets/Lobo_Blanco.webp" alt="Admin" class="logo" />
+      <span>Admin Panel</span>
+    </div>
+
+    <mat-nav-list>
+      <a
+        mat-list-item
+        routerLink="/dashboard"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        <mat-icon matListItemIcon>dashboard</mat-icon>
+        <span matListItemTitle>Resumen</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/dashboard/contacts"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>mail</mat-icon>
+        <span matListItemTitle>Mensajes</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/dashboard/propuestas"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>description</mat-icon>
+        <span matListItemTitle>Propuestas</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/dashboard/clientes"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>group</mat-icon>
+        <span matListItemTitle>Clientes</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/dashboard/proyectos"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>account_tree</mat-icon>
+        <span matListItemTitle>Proyectos</span>
+      </a>
+    </mat-nav-list>
+
+    <div class="sidebar-footer">
+      <button mat-button (click)="buscarActualizacionesManual()" title="Buscar actualizaciones de la aplicación">
+        <mat-icon>system_update</mat-icon>
+        Buscar Actualizaciones
+      </button>
+      <button mat-button (click)="openChangePassword()">
+        <mat-icon>lock_reset</mat-icon>
+        Cambiar Clave
+      </button>
+      <button mat-button color="warn" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        Cerrar Sesión
+      </button>
+    </div>
+  </mat-drawer>
+
+  <mat-drawer-content class="dashboard-content">
+    <mat-toolbar color="primary" class="dashboard-toolbar">
+      <button mat-icon-button (click)="drawer.toggle()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span>Dashboard</span>
+      <span class="spacer"></span>
+      <span class="username">Admin</span>
+    </mat-toolbar>
+
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-drawer-content>
+</mat-drawer-container>

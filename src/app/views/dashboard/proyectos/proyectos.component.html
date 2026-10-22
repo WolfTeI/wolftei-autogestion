@@ -1,0 +1,233 @@
+<div class="page-container">
+  <div class="header-actions">
+    <div class="title-section">
+      <mat-icon class="page-icon">account_tree</mat-icon>
+      <div>
+        <h1>Gestión de Proyectos</h1>
+        <p class="subtitle">Evolución de desarrollos activos y encuestas de satisfacción</p>
+      </div>
+    </div>
+
+    <!-- Toggle de Vistas -->
+    <mat-button-toggle-group [(value)]="vistaModo" aria-label="Modo de vista">
+      <mat-button-toggle value="kanban">
+        <mat-icon>view_kanban</mat-icon> Tablero
+      </mat-button-toggle>
+      <mat-button-toggle value="tabla">
+        <mat-icon>table_chart</mat-icon> Lista
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando proyectos en curso...</p>
+    </div>
+  } @else if (proyectos().length === 0) {
+    <mat-card class="empty-state">
+      <mat-card-content>
+        <mat-icon>folder_open</mat-icon>
+        <p>No hay proyectos activos en curso.</p>
+        <small class="text-muted">Los proyectos se generan automáticamente cuando un cliente acepta una propuesta comercial.</small>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+
+    <!-- ── VISTA TABLERO KANBAN ── -->
+    @if (vistaModo === 'kanban') {
+      <div class="kanban-board">
+        @for (col of kanbanColumns; track col.id) {
+          <div class="kanban-column" [class]="'col-' + col.id">
+            <div class="col-header" [style.border-top-color]="col.color">
+              <div class="col-title">
+                <mat-icon [style.color]="col.color">{{ col.icon }}</mat-icon>
+                <span>{{ col.label }}</span>
+              </div>
+              <span class="count-badge">{{ proyectosPorEstado(col.id).length }}</span>
+            </div>
+
+            <div class="col-cards">
+              @for (p of proyectosPorEstado(col.id); track p.id) {
+                <mat-card class="kanban-card">
+                  <div class="card-top">
+                    <span class="card-phase">{{ p.currentPhase || 'Fase Inicial' }}</span>
+                    <button mat-icon-button [matMenuTriggerFor]="cardMenu" class="more-btn" matTooltip="Cambiar fase">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #cardMenu="matMenu">
+                      <span class="menu-header">Mover a:</span>
+                      @for (dest of kanbanColumns; track dest.id) {
+                        @if (dest.id !== col.id) {
+                          <button mat-menu-item (click)="moverEstado(p, dest.id)">
+                            <mat-icon [style.color]="dest.color">{{ dest.icon }}</mat-icon>
+                            {{ dest.label }}
+                          </button>
+                        }
+                      }
+                    </mat-menu>
+                  </div>
+
+                  <h3 class="card-title">{{ p.title }}</h3>
+
+                  <div class="card-client">
+                    <mat-icon>business</mat-icon>
+                    <a [routerLink]="['/dashboard/clientes', p.clientId]" class="client-link">
+                      {{ p.clientName || 'Cliente' }}
+                    </a>
+                  </div>
+
+                  <div class="card-footer">
+                    <span class="card-amount">
+                      {{ p.totalAmount | currency: p.currency : 'symbol' : '1.0-0' }} {{ p.currency }}
+                    </span>
+
+                    <div class="card-actions">
+                      <!-- Menú de Documentos Legales -->
+                      <button mat-icon-button [matMenuTriggerFor]="cardDocMenu" matTooltip="Documentos legales (Contrato / NDA)">
+                        <mat-icon>gavel</mat-icon>
+                      </button>
+                      <mat-menu #cardDocMenu="matMenu">
+                        <button mat-menu-item (click)="descargarContratoProyecto(p)">
+                          <mat-icon>description</mat-icon>
+                          <span>Contrato de Desarrollo (PDF)</span>
+                        </button>
+                        <button mat-menu-item (click)="descargarNDAProyecto(p)">
+                          <mat-icon>lock</mat-icon>
+                          <span>Acuerdo Confidencialidad NDA (PDF)</span>
+                        </button>
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item (click)="descargarCarpetaProyecto(p)">
+                          <mat-icon>folder_open</mat-icon>
+                          <span>Descargar Carpeta Completa (Imprimir)</span>
+                        </button>
+                      </mat-menu>
+
+                      @if (p.status === 'entregado') {
+                        @if (p.reviewCompleted) {
+                          <div class="review-star" matTooltip="Reseña recibida">
+                            <mat-icon color="accent">star</mat-icon>
+                            <span>{{ p.reviewStars }}</span>
+                          </div>
+                        } @else {
+                          <button mat-icon-button color="primary" (click)="copiarEncuesta(p)" matTooltip="Copiar link de encuesta">
+                            <mat-icon>link</mat-icon>
+                          </button>
+                          <button mat-icon-button style="color: #10b981;" (click)="enviarEncuestaWhatsApp(p)" matTooltip="Pedir reseña por WhatsApp">
+                            <mat-icon>chat</mat-icon>
+                          </button>
+                        }
+                      } @else {
+                        <button mat-stroked-button color="primary" class="btn-sm" (click)="entregarProyecto(p)">
+                          <mat-icon>task_alt</mat-icon> Entregar
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </mat-card>
+              } @empty {
+                <div class="col-empty">
+                  <span>Sin proyectos</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── VISTA TABLA CLÁSICA ── -->
+    @if (vistaModo === 'tabla') {
+      <mat-card>
+        <table mat-table [dataSource]="proyectos()" class="proyectos-table">
+          
+          <!-- Title Column -->
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef> Proyecto </th>
+            <td mat-cell *matCellDef="let element"> 
+              <strong>{{element.title}}</strong>
+            </td>
+          </ng-container>
+
+          <!-- Client Column -->
+          <ng-container matColumnDef="client">
+            <th mat-header-cell *matHeaderCellDef> Cliente </th>
+            <td mat-cell *matCellDef="let element"> 
+              <a [routerLink]="['/dashboard/clientes', element.clientId]" class="client-link">
+                {{element.clientName}}
+              </a>
+            </td>
+          </ng-container>
+
+          <!-- Phase Column -->
+          <ng-container matColumnDef="phase">
+            <th mat-header-cell *matHeaderCellDef> Fase Actual </th>
+            <td mat-cell *matCellDef="let element"> {{element.currentPhase}} </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef> Estado </th>
+            <td mat-cell *matCellDef="let element"> 
+              <mat-chip [color]="getStatusColor(element.status)" selected>
+                {{element.status | uppercase}}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> Acciones </th>
+            <td mat-cell *matCellDef="let element">
+              <div class="table-actions">
+                <button mat-icon-button [matMenuTriggerFor]="tableDocMenu" matTooltip="Documentos legales (Contrato / NDA)">
+                  <mat-icon>gavel</mat-icon>
+                </button>
+                <mat-menu #tableDocMenu="matMenu">
+                  <button mat-menu-item (click)="descargarContratoProyecto(element)">
+                    <mat-icon>description</mat-icon>
+                    <span>Contrato de Desarrollo (PDF)</span>
+                  </button>
+                  <button mat-menu-item (click)="descargarNDAProyecto(element)">
+                    <mat-icon>lock</mat-icon>
+                    <span>Acuerdo Confidencialidad NDA (PDF)</span>
+                  </button>
+                  <mat-divider></mat-divider>
+                  <button mat-menu-item (click)="descargarCarpetaProyecto(element)">
+                    <mat-icon>folder_open</mat-icon>
+                    <span>Descargar Carpeta Completa (Imprimir)</span>
+                  </button>
+                </mat-menu>
+
+                @if (element.status !== 'entregado') {
+                  <button mat-flat-button color="accent" (click)="entregarProyecto(element)">
+                    <mat-icon>task_alt</mat-icon>
+                    Entregar
+                  </button>
+                } @else {
+                  @if (element.reviewCompleted) {
+                    <mat-chip class="review-completed-chip">
+                      <mat-icon>star</mat-icon>
+                      {{ element.reviewStars }} Reseña Lista
+                    </mat-chip>
+                  } @else {
+                    <button mat-stroked-button color="primary" (click)="copiarEncuesta(element)" matTooltip="Copiar link de encuesta">
+                      <mat-icon>content_copy</mat-icon> Link
+                    </button>
+                    <button mat-icon-button style="color: #10b981;" (click)="enviarEncuestaWhatsApp(element)" matTooltip="Enviar por WhatsApp">
+                      <mat-icon>chat</mat-icon>
+                    </button>
+                  }
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row"></tr>
+        </table>
+      </mat-card>
+    }
+
+  }
+</div>

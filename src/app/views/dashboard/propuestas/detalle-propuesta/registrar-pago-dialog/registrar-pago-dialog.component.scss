@@ -1,0 +1,206 @@
+.dialog-container {
+  min-width: 480px;
+  max-width: 560px;
+  padding: 8px;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+    }
+  }
+}
+
+.cliente-badge {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+
+  .saldo-info {
+    color: var(--mat-sys-primary, #667eea);
+  }
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+
+  button {
+    font-size: 0.8rem;
+    height: 32px;
+    line-height: 32px;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+
+    &.active-preset {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: #8b5cf6;
+      color: #c4b5fd;
+      font-weight: 600;
+    }
+  }
+}
+
+.calculo-live-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+
+  .calc-item {
+    display: flex;
+    flex-direction: column;
+
+    .calc-label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .calc-val {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    &.highlight .calc-val {
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    &.remainder .calc-val {
+      color: #f59e0b;
+      font-weight: 700;
+    }
+  }
+
+  .calc-arrow {
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: bold;
+  }
+}
+
+.firma-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 6px;
+
+  .firma-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .firma-thumb {
+      height: 38px;
+      max-width: 45px;
+      object-fit: contain;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 6px;
+      padding: 2px 4px;
+    }
+
+    strong {
+      display: block;
+      font-size: 0.85rem;
+      color: #f8fafc;
+    }
+
+    p {
+      margin: 2px 0 0;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+  }
+
+  .firma-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    button {
+      font-size: 0.8rem;
+    }
+  }
+}
+
+.pago-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .form-row {
+    width: 100%;
+
+    &.two-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .col-full {
+      width: 100%;
+    }
+
+    mat-form-field {
+      width: 100%;
+    }
+  }
+}
+
+.dialog-actions {
+  padding-top: 16px;
+  gap: 10px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .dialog-container {
+    min-width: 100%;
+  }
+
+  .pago-form .form-row.two-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .cliente-badge {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

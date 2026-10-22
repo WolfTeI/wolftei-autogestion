@@ -1,0 +1,81 @@
+.messages-container {
+  .header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0;
+      color: white;
+      font-size: 1.8rem;
+    }
+  }
+
+  .table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #1e1e2e;
+    min-height: 200px;
+
+    table {
+      width: 100%;
+      background-color: #1e1e2e;
+
+      th {
+        background-color: #252538;
+        color: #b0b0b0 !important;
+        font-weight: 600;
+      }
+
+      td {
+        color: #e0e0e0 !important;
+        border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+      }
+
+      tr:hover {
+        background-color: rgba(255, 255, 255, 0.04) !important;
+      }
+
+      .source-chip {
+        display: inline-block;
+        background-color: rgba(114, 137, 218, 0.15);
+        color: #b8a6ff;
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+        border: 1px solid rgba(114, 137, 218, 0.3);
+      }
+    }
+
+    .empty-state {
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #b0b0b0;
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+    }
+  }
+}
+
+// Ensure global overrides
+::ng-deep .messages-container {
+  .mat-mdc-header-cell {
+    color: #b0b0b0 !important;
+  }
+  .mat-mdc-cell {
+    color: #e0e0e0 !important;
+  }
+}
