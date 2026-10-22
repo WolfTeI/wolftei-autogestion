@@ -69,6 +69,8 @@ export interface Propuesta {
   pricingDetails?: PricingDetails;
   status?: string;
   createdAt?: string;
+  updatedAt?: string;
+  viewedAt?: string;
   expiresAt?: string;
   // Datos que se completan al aceptar
   acceptedAt?: string;

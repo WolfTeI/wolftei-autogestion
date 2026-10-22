@@ -17,6 +17,28 @@
   } @else {
   <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
 
+    <!-- SECCIÓN: Plantillas Rápidas (Presets) -->
+    <mat-card class="form-section presets-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #f59e0b;">bolt</mat-icon>
+        <mat-card-title>Plantillas Rápidas de Presupuesto</mat-card-title>
+        <mat-card-subtitle>Hacé clic en una plantilla para autocompletar módulos, alcances, plazos y costos sugeridos al instante.</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="presets-buttons-grid">
+          @for (preset of PRESETS; track preset.id) {
+            <button type="button" mat-stroked-button class="preset-btn" (click)="aplicarPreset(preset.id)">
+              <mat-icon>{{ preset.icon }}</mat-icon>
+              <div class="preset-text">
+                <span class="preset-title">{{ preset.label }}</span>
+                <span class="preset-price">{{ preset.totalAmount }} USD</span>
+              </div>
+            </button>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+
     <!-- SECCIÓN: Datos del Cliente -->
     <mat-card class="form-section">
       <mat-card-header>

@@ -166,6 +166,22 @@
 .status-finalizado  { background: rgba(107,114,128,0.15); color: #9ca3af; }
 .status-cancelado   { background: rgba(239,68,68,0.15);   color: #f87171; }
 
+.chip-fria {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+  animation: pulse-fria 2s infinite ease-in-out;
+}
+
+@keyframes pulse-fria {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.96); }
+}
+
 // Acciones
 .acciones {
   display: flex;

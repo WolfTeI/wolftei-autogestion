@@ -75,9 +75,16 @@
         <ng-container matColumnDef="estado">
           <th mat-header-cell *matHeaderCellDef>Estado</th>
           <td mat-cell *matCellDef="let p">
-            <span class="status-chip" [class]="'status-' + p.status">
-              {{ getStatusLabel(p.status) }}
-            </span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span class="status-chip" [class]="'status-' + p.status">
+                {{ getStatusLabel(p.status) }}
+              </span>
+              @if (esPropuestaFria(p)) {
+                <span class="chip-fria" matTooltip="Más de 48h sin confirmación. ¡Requiere seguimiento comercial!">
+                  ⚠️ Fría
+                </span>
+              }
+            </div>
           </td>
         </ng-container>
 
@@ -94,6 +101,9 @@
           <th mat-header-cell *matHeaderCellDef>Acciones</th>
           <td mat-cell *matCellDef="let p">
             <div class="acciones">
+              <button mat-icon-button [matTooltip]="esPropuestaFria(p) ? 'Enviar seguimiento por WhatsApp' : 'Enviar propuesta por WhatsApp'" (click)="esPropuestaFria(p) ? enviarSeguimientoWhatsApp(p) : enviarPropuestaWhatsApp(p); $event.stopPropagation()">
+                <mat-icon style="color: #25d366;">chat</mat-icon>
+              </button>
               <button mat-icon-button [matTooltip]="'Ver detalle'" (click)="verDetalle(p); $event.stopPropagation()">
                 <mat-icon>visibility</mat-icon>
               </button>
@@ -107,6 +117,21 @@
                 <mat-icon>more_vert</mat-icon>
               </button>
               <mat-menu #menuEstado="matMenu">
+                <button mat-menu-item (click)="enviarPropuestaWhatsApp(p)">
+                  <mat-icon style="color: #25d366;">chat</mat-icon>
+                  Enviar por WhatsApp
+                </button>
+                <button mat-menu-item (click)="enviarSeguimientoWhatsApp(p)">
+                  <mat-icon style="color: #f59e0b;">notifications_active</mat-icon>
+                  Enviar Seguimiento
+                </button>
+                @if (p.status === 'aceptado') {
+                  <button mat-menu-item (click)="enviarBienvenidaWhatsApp(p)">
+                    <mat-icon style="color: #10b981;">celebration</mat-icon>
+                    Enviar Bienvenida
+                  </button>
+                }
+                <mat-divider></mat-divider>
                 <button mat-menu-item (click)="editarPropuesta(p)">
                   <mat-icon color="primary">edit</mat-icon>
                   Editar Presupuesto

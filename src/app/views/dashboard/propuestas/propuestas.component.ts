@@ -12,6 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subscription } from 'rxjs';
 
 import { PropuestasService, Propuesta } from '../../../service/propuestas.service';
+import { WhatsAppService } from '../../../service/whatsapp.service';
 
 /** Configuración de estados para filtros y menú */
 const ESTADOS = [
@@ -46,6 +47,7 @@ const ESTADOS = [
 })
 export class PropuestasComponent implements OnInit, OnDestroy {
   private propuestasService = inject(PropuestasService);
+  private whatsappService = inject(WhatsAppService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
   private sub?: Subscription;
@@ -160,4 +162,57 @@ export class PropuestasComponent implements OnInit, OnDestroy {
       error: () => this.snackBar.open('Error al eliminar la propuesta', 'Cerrar', { duration: 3000 }),
     });
   }
+
+  /**
+   * Determina si una propuesta requiere seguimiento comercial urgente (más de 48h en enviado o visto).
+   */
+  esPropuestaFria(p: Propuesta): boolean {
+    if (p.status !== 'enviado' && p.status !== 'visto') return false;
+    const fechaRef = p.updatedAt || p.createdAt;
+    if (!fechaRef) return false;
+    const diffHoras = (Date.now() - new Date(fechaRef).getTime()) / (1000 * 60 * 60);
+    return diffHoras >= 48;
+  }
+
+  /**
+   * Abre WhatsApp para enviar la propuesta con link público.
+   */
+  async enviarPropuestaWhatsApp(p: Propuesta) {
+    if (!p.token) return;
+    const msg = this.whatsappService.generarMensajePropuesta(
+      p.clientPreviewName,
+      p.title,
+      p.token,
+      p.validDays || 15
+    );
+    await this.whatsappService.abrirChat('', msg);
+    this.snackBar.open('Mensaje preparado en WhatsApp y copiado al portapapeles', '', { duration: 3000 });
+  }
+
+  /**
+   * Abre WhatsApp con mensaje de seguimiento para propuestas frías.
+   */
+  async enviarSeguimientoWhatsApp(p: Propuesta) {
+    if (!p.token) return;
+    const msg = this.whatsappService.generarMensajeSeguimientoFria(
+      p.clientPreviewName,
+      p.title,
+      p.token
+    );
+    await this.whatsappService.abrirChat('', msg);
+    this.snackBar.open('Seguimiento comercial abierto en WhatsApp', '', { duration: 3000 });
+  }
+
+  /**
+   * Abre WhatsApp con felicitación y bienvenida tras aceptación.
+   */
+  async enviarBienvenidaWhatsApp(p: Propuesta) {
+    const msg = this.whatsappService.generarMensajeBienvenidaProyecto(
+      p.clientPreviewName,
+      p.title
+    );
+    await this.whatsappService.abrirChat('', msg);
+    this.snackBar.open('Mensaje de bienvenida preparado en WhatsApp', '', { duration: 3000 });
+  }
 }
+

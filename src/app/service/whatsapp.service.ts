@@ -104,4 +104,34 @@ Te escribo desde *WolfTeI* para confirmar el registro del pago por concepto de *
 Saludos,
 *WolfTeI*`;
   }
+
+  /**
+   * Genera mensaje cordial de seguimiento comercial para propuestas frías (>48hs sin respuesta).
+   */
+  generarMensajeSeguimientoFria(clienteNombre: string, proyectoTitulo: string, token: string): string {
+    const link = `https://wolftei.com.ar/propuesta/${token}`;
+    return `¡Hola ${clienteNombre}! 👋 ¿Cómo estás?
+
+Te consulto si pudiste revisar la propuesta que te compartimos para *"${proyectoTitulo}"*:
+
+🔗 ${link}
+
+Avisame con total tranquilidad si querés que ajustemos algún alcance, módulo o cronograma según las prioridades actuales de tu negocio. ¡Quedo a tu disposición!
+
+Saludos,
+*WolfTeI* — Soluciones de Software`;
+  }
+
+  /**
+   * Genera mensaje de bienvenida y formalización de inicio de proyecto.
+   */
+  generarMensajeBienvenidaProyecto(clienteNombre: string, proyectoTitulo: string): string {
+    return `¡Hola ${clienteNombre}! 🎉
+
+¡Excelente noticia! Recibimos con éxito la formalización de la propuesta para *"${proyectoTitulo}"*.
+
+Ya agendamos el alcance en nuestro tablero de desarrollo y estamos preparando el inicio del proyecto. En breve nos comunicamos para coordinar los primeros entregables.
+
+¡Muchas gracias por confiar en *WolfTeI*!`;
+  }
 }

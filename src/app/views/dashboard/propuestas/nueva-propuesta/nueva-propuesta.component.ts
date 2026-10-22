@@ -64,6 +64,167 @@ export class NuevaPropuestaComponent implements OnInit {
   filteredClientes!: Observable<Cliente[]>;
   cotizacionesDolar: DolarCotizacion[] = [];
 
+  readonly PRESETS = [
+    {
+      id: 'landing',
+      label: 'Landing Corporativa',
+      icon: 'web',
+      title: 'Sitio Web Institucional & Captación de Leads',
+      objective: 'Diseño y desarrollo de presencia digital de alto impacto optimizada para SEO, velocidad de carga y conversión de clientes.',
+      platform: 'Web',
+      techStack: 'Angular v22 Standalone + HTML5 Semántico + SCSS + SSR',
+      persistence: 'Google Firestore (Formularios y Contacto)',
+      totalAmount: 380,
+      currency: 'USD',
+      validDays: 15,
+      warrantyDays: 30,
+      modules: [
+        { name: 'Hero Section y Propuesta de Valor', description: 'Impacto visual inicial, copy enfocado en conversión y llamados a la acción claros.', estimatedHours: 6 },
+        { name: 'Catálogo de Servicios y Soluciones', description: 'Presentación interactiva de la oferta comercial y diferenciadores técnicos.', estimatedHours: 8 },
+        { name: 'Prueba Social y Testimonios', description: 'Bloque de confianza con métricas, opiniones de clientes y certificaciones.', estimatedHours: 5 },
+        { name: 'Formulario de Contacto y WhatsApp Directo', description: 'Canal de recepción de consultas conectado a base de datos y apertura nativa de WhatsApp.', estimatedHours: 6 }
+      ],
+      phases: [
+        { label: 'Fase 1: Wireframes, Arquitectura de Información y Copywriting', weeks: '1 semana' },
+        { label: 'Fase 2: Maquetado UI, Animaciones y Responsive Multi-dispositivo', weeks: '1 semana' },
+        { label: 'Fase 3: Optimización SEO On-Page, Testing y Despliegue en Servidor', weeks: '1 semana' }
+      ]
+    },
+    {
+      id: 'webapp',
+      label: 'Sistema / Panel Web',
+      icon: 'dashboard',
+      title: 'Panel de Control y Gestión Operativa a Medida',
+      objective: 'Desarrollo de plataforma administrativa en la nube para centralizar la gestión de clientes, presupuestos y procesos en tiempo real.',
+      platform: 'WebApp',
+      techStack: 'Angular v22 (Signals) + Google Firebase (Firestore/Auth) + Node.js',
+      persistence: 'Google Cloud Firestore NoSQL',
+      totalAmount: 890,
+      currency: 'USD',
+      validDays: 15,
+      warrantyDays: 30,
+      modules: [
+        { name: 'Autenticación Segura y Control de Acceso (RBAC)', description: 'Inicio de sesión con Firebase Auth, resguardo de sesiones y roles de usuario.', estimatedHours: 10 },
+        { name: 'Gestión Integral de Entidades (CRUD)', description: 'Tablas reactivas de datos con filtros en tiempo real, búsqueda y formularios validados.', estimatedHours: 16 },
+        { name: 'Tablero de Control y Métricas en Tiempo Real', description: 'Métricas clave, estados en vivo y sincronización con onSnapshot sin recargas.', estimatedHours: 12 },
+        { name: 'Generación y Exportación de Documentos PDF', description: 'Compilación al vuelo de recibos oficiales, cotizaciones y contratos formalizados.', estimatedHours: 10 }
+      ],
+      phases: [
+        { label: 'Fase 1: Modelado de Datos y Políticas de Seguridad', weeks: '1 semana' },
+        { label: 'Fase 2: Desarrollo de Módulos Core y Lógica de Negocio', weeks: '2 semanas' },
+        { label: 'Fase 3: Reportes, Pruebas de Carga y Capacitación Operativa', weeks: '1 semana' }
+      ]
+    },
+    {
+      id: 'desktop',
+      label: 'Software Escritorio (Tauri)',
+      icon: 'desktop_windows',
+      title: 'Aplicación Desktop Nativa de Alto Rendimiento',
+      objective: 'Software de escritorio ultraliviano y seguro, con integración profunda al sistema operativo, bajo consumo de recursos y auto-actualizaciones.',
+      platform: 'Escritorio (Windows)',
+      techStack: 'Tauri v2 (Rust) + Angular + Windows APIs',
+      persistence: 'SQLite Local Cifrado / Firestore',
+      totalAmount: 1150,
+      currency: 'USD',
+      validDays: 15,
+      warrantyDays: 30,
+      modules: [
+        { name: 'Núcleo Nativo en Rust con IPC Aislado', description: 'Arquitectura de seguridad OWASP que delimita comandos de sistema y origen web.', estimatedHours: 14 },
+        { name: 'Bandeja del Sistema (System Tray) y Segundo Plano', description: 'Ejecución en segundo plano al lado del reloj con menú contextual personalizado.', estimatedHours: 8 },
+        { name: 'Notificaciones Push Nativas de Windows', description: 'Alertas emergentes del sistema operativo ante eventos en vivo sin depender del navegador.', estimatedHours: 8 },
+        { name: 'Auto-Updater Criptográfico con GitHub Releases', description: 'Comprobación y actualización desatendida con firma digital ED25519.', estimatedHours: 10 }
+      ],
+      phases: [
+        { label: 'Fase 1: Configuración de Entorno Tauri y Capacidades Rust', weeks: '1 semana' },
+        { label: 'Fase 2: Implementación de UI Reactiva y Comunicación IPC', weeks: '2 semanas' },
+        { label: 'Fase 3: Generación de Instaladores WiX (es-ES) y Pruebas', weeks: '1 semana' }
+      ]
+    },
+    {
+      id: 'android',
+      label: 'App Móvil Android',
+      icon: 'phone_android',
+      title: 'Aplicación Móvil Operativa para Android',
+      objective: 'Solución móvil ágil enfocada en productividad en campo, consultas rápidas y sincronización offline-first.',
+      platform: 'Mobile (Android)',
+      techStack: 'Android Nativo / Web Híbrida PWA + Firebase',
+      persistence: 'Cache Local IndexedDB + Firestore',
+      totalAmount: 950,
+      currency: 'USD',
+      validDays: 15,
+      warrantyDays: 30,
+      modules: [
+        { name: 'Interfaz Adaptada a Uso Táctil en Campo', description: 'Diseño ergónomico para operaciones con una sola mano y alta visibilidad.', estimatedHours: 12 },
+        { name: 'Sincronización Offline y Cola de Acciones', description: 'Capacidad de operar sin conexión a internet y sincronizar al recuperar señal.', estimatedHours: 14 },
+        { name: 'Notificaciones Push y Alertas', description: 'Avisos directos en la barra de notificaciones del celular.', estimatedHours: 8 }
+      ],
+      phases: [
+        { label: 'Fase 1: Prototipado UX/UI Móvil y Flujo de Pantallas', weeks: '1 semana' },
+        { label: 'Fase 2: Desarrollo Lógico y Persistencia Offline', weeks: '2 semanas' },
+        { label: 'Fase 3: Empaquetado APK, Pruebas en Dispositivos y Despliegue', weeks: '1 semana' }
+      ]
+    },
+    {
+      id: 'mantenimiento',
+      label: 'Abono de Soporte & Seguridad',
+      icon: 'security',
+      title: 'Servicio Mensual de Soporte Técnico y Ciberseguridad',
+      objective: 'Cobertura preventiva mensual de infraestructura, parches de seguridad de librerías, copias de seguridad y bolsa de horas de mejoras.',
+      platform: 'Servicio Continuo',
+      techStack: 'Monitoreo de Uptime + Auditoría OWASP + Backups Automatizados',
+      persistence: 'Backups Periódicos en Cloud Storage',
+      totalAmount: 180,
+      currency: 'USD',
+      validDays: 30,
+      warrantyDays: 0,
+      modules: [
+        { name: 'Monitoreo de Disponibilidad y Seguridad 24/7', description: 'Alertas automáticas de caídas de servidor y verificación de certificados SSL.', estimatedHours: 4 },
+        { name: 'Actualización y Parches de Dependencias', description: 'Auditoría mensual de CVEs y actualización de paquetes npm/cargo.', estimatedHours: 4 },
+        { name: 'Copias de Seguridad Periódicas de Base de Datos', description: 'Generación y verificación de restaurabilidad de backups semanales.', estimatedHours: 3 },
+        { name: 'Bolsa de 4 Horas Mensuales de Ajustes Menores', description: 'Cambios de diseño, textos o nuevos ajustes funcionales solicitados por el cliente.', estimatedHours: 4 }
+      ],
+      phases: [
+        { label: 'Cobertura Mensual Renovable', weeks: '4 semanas' }
+      ]
+    }
+  ];
+
+  aplicarPreset(presetId: string) {
+    const p = this.PRESETS.find(item => item.id === presetId);
+    if (!p) return;
+
+    this.form.patchValue({
+      title: p.title,
+      objective: p.objective,
+      platform: p.platform,
+      techStack: p.techStack,
+      persistence: p.persistence,
+      totalAmount: p.totalAmount,
+      currency: p.currency,
+      validDays: p.validDays,
+      warrantyDays: p.warrantyDays
+    });
+
+    this.modulesArray.clear();
+    p.modules.forEach(m => {
+      this.modulesArray.push(this.fb.group({
+        name: [m.name, Validators.required],
+        description: [m.description],
+        estimatedHours: [m.estimatedHours, [Validators.required, Validators.min(1)]]
+      }));
+    });
+
+    this.phasesArray.clear();
+    p.phases.forEach(f => {
+      this.phasesArray.push(this.fb.group({
+        label: [f.label, Validators.required],
+        weeks: [f.weeks]
+      }));
+    });
+
+    this.snackBar.open(`Plantilla "${p.label}" cargada con éxito`, '', { duration: 2500 });
+  }
+
   form: FormGroup = this.fb.group({
     clientId: [null], // Si se selecciona cliente
     clientPreviewName: ['', Validators.required],

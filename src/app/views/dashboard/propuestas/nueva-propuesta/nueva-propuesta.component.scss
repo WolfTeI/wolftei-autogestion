@@ -41,6 +41,61 @@
   }
 }
 
+.presets-card {
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  background: rgba(245, 158, 11, 0.02) !important;
+}
+
+.presets-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.preset-btn {
+  height: auto !important;
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-align: left !important;
+  transition: all 0.2s ease !important;
+
+  mat-icon {
+    color: #667eea;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .preset-text {
+    display: flex;
+    flex-direction: column;
+
+    .preset-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .preset-price {
+      font-size: 0.72rem;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+  }
+
+  &:hover {
+    border-color: #667eea !important;
+    background: rgba(102, 126, 234, 0.08) !important;
+    transform: translateY(-2px);
+  }
+}
+
 // Layouts de campos
 .fields-row {
   display: flex;
