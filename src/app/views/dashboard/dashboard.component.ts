@@ -14,6 +14,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../service/auth.service';
 import { UpdaterService } from '../../service/updater.service';
+import { NotificationService } from '../../service/notification.service';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog.component';
 
 @Component({
@@ -38,10 +39,14 @@ export class DashboardComponent implements OnInit {
   router = inject(Router);
   dialog = inject(MatDialog);
   updaterService = inject(UpdaterService);
+  notificationService = inject(NotificationService);
 
   ngOnInit() {
     // Comprobar si hay una nueva versión disponible en GitHub Releases
     this.updaterService.checkForUpdates(true);
+
+    // Inicializar listeners para notificaciones nativas de Windows en segundo plano
+    this.notificationService.init();
   }
 
   buscarActualizacionesManual() {

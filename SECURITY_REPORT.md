@@ -9,6 +9,8 @@
 | **Firebase Authentication** | Gestión descentralizada de identidades | Almacenamiento y verificación de contraseñas mediante hashing scrypt seguro de Google, con tokens JWT / ID Tokens firmados con rotación periódica automática. |
 | **Google Cloud Firestore** | Base de datos documental NoSQL serverless | Control granular de acceso por documento y atributo validado en el borde mediante `firestore.rules`. Protección nativa contra inyecciones SQL/NoSQL. |
 | **Tauri v2** | Entorno de ejecución Desktop (Rust) | Restricción estricta de IPC entre la webview y el sistema operativo, impidiendo acceso a comandos arbitrarios del sistema y delimitando el origen. |
+| **tauri-plugin-updater** | Actualizaciones automáticas y seguras | Verificación criptográfica de binarios con firma digital ED25519 (`pubkey`), previniendo ejecución de ejecutables maliciosos o adulterados (OWASP A08). |
+| **tauri-plugin-notification** | Notificaciones nativas del sistema operativo | Aislamiento de permisos en el manifest de capacidades (`capabilities/default.json`), sin acceso no autorizado a APIs de sistema operativo. |
 | **Angular Material** | Componentes de Interfaz de Usuario | Validaciones de formulario reactivas y accesibles que impiden el envío de datos con formatos maliciosos o inconsistentes. |
 | **Web Crypto API (SubtleCrypto)** | Criptografía nativa del navegador (CSPRNG) | Generación de identificadores de propuestas (`wlf-XXXXXX`) y encuestas (`srv-XXXXXX`) con entropía segura a través de `crypto.getRandomValues()`. |
 
