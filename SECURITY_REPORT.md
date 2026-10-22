@@ -43,6 +43,9 @@ Con la migración directa a Firebase, el control de acceso se rige por las polí
    * Ningún token sensible se genera mediante `Math.random()`. Se utiliza exclusivamente `crypto.getRandomValues()` de la Web Crypto API.
 4. **Transporte Seguro (ISO 27001 - Control 8.24):**
    * Toda la comunicación entre la aplicación Tauri / Angular y los servidores de Google Firebase se transmite cifrada mediante TLS 1.3 forzado.
+5. **Gestión de Secretos y Configuración de Entorno (OWASP A02 / ISO 27002 Control 8.24):**
+   * Exclusión estricta de variables de entorno y llaves de acceso (`src/environments/environment*.ts`) del sistema de control de versiones Git mediante `.gitignore`.
+   * Provisión de plantilla sanitizada `environment.example.ts` para despliegues y entornos de desarrollo sin exposición de credenciales operativas.
 
 ---
 
@@ -51,7 +54,7 @@ Con la migración directa a Firebase, el control de acceso se rige por las polí
 | Vulnerabilidad | Tipo de Ataque Prevenido | Medida Implementada |
 | :--- | :--- | :--- |
 | **A01: Broken Access Control** | Lectura o manipulación no autorizada de cotizaciones, clientes y proyectos | Matriz de permisos en `firestore.rules` con denegación por defecto (`allow read, write: if false;`) y verificación de identidad `request.auth != null`. |
-| **A02: Cryptographic Failures** | Predicción de tokens de propuestas o interceptación de credenciales | Pre-requisito de TLS 1.3 nativo de Firebase, uso de CSPRNG (`crypto.getRandomValues()`) y delegación del ciclo de vida de tokens a Firebase Auth. |
+| **A02: Cryptographic Failures / Secrets Exposure** | Exposición de credenciales de infraestructura o API Keys en repositorios | Exclusión de archivos `environment*.ts` del control de versiones (`.gitignore`), segregación de llaves y uso de CSPRNG (`crypto.getRandomValues()`). |
 | **A03: Injection** | Inyecciones en formularios o parámetros de consulta | SDK de Firestore con parámetros fuertemente tipados y parseo de tipos en Angular. |
 | **A07: Identification and Authentication Failures** | Fuerza bruta o robo de credenciales | Autenticación gestionada por Firebase Auth con bloqueo ante intentos repetidos y rotación periódica de tokens JWT. |
 | **A08: Software and Data Integrity Failures** | Adulteración de firmas o contratos en local | Empaquetado estático y compilado de la firma oficial (`firma-oficial.ts`) y validación estricta en base de datos. |
