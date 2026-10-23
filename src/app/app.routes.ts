@@ -93,6 +93,14 @@ export const routes: Routes = [
             (m) => m.ProyectosComponent,
           ),
       },
+      // ── Finanzas, Cobranzas y Reseñas ──
+      {
+        path: 'finanzas',
+        loadComponent: () =>
+          import('./views/dashboard/finanzas/finanzas.component').then(
+            (m) => m.FinanzasComponent,
+          ),
+      },
     ],
   },
   {

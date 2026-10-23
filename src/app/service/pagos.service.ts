@@ -9,6 +9,7 @@ import {
   query,
   where,
   orderBy,
+  onSnapshot,
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 
@@ -124,5 +125,65 @@ export class PagosService {
     const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, id);
     await deleteDoc(docRef);
     return { message: 'Cobro eliminado exitosamente' };
+  }
+
+  /**
+   * Escucha en tiempo real todas las cobranzas y pagos registrados.
+   */
+  listenPagos(): Observable<Pago[]> {
+    return new Observable<Pago[]>((subscriber) => {
+      const colRef = collection(this.firebaseService.db, this.COLLECTION_NAME);
+      const q = query(colRef, orderBy('createdAt', 'desc'));
+
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const items = snapshot.docs.map((docSnap) => ({
+            id: docSnap.id,
+            ...(docSnap.data() as Omit<Pago, 'id'>),
+          }));
+          subscriber.next(items);
+        },
+        (error) => {
+          console.warn('Fallback sin orderBy en listenPagos:', error);
+          const unsubFallback = onSnapshot(
+            colRef,
+            (snap) => {
+              const items = snap.docs.map((docSnap) => ({
+                id: docSnap.id,
+                ...(docSnap.data() as Omit<Pago, 'id'>),
+              }));
+              subscriber.next(items);
+            },
+            (err2) => subscriber.error(err2)
+          );
+          return () => unsubFallback();
+        }
+      );
+
+      return () => unsubscribe();
+    });
+  }
+
+  /**
+   * Lista todos los pagos registrados (one-shot).
+   */
+  listarTodos(): Observable<Pago[]> {
+    return from(this.fetchAllPagos());
+  }
+
+  private async fetchAllPagos(): Promise<Pago[]> {
+    const colRef = collection(this.firebaseService.db, this.COLLECTION_NAME);
+    let snapshot;
+    try {
+      const q = query(colRef, orderBy('createdAt', 'desc'));
+      snapshot = await getDocs(q);
+    } catch {
+      snapshot = await getDocs(colRef);
+    }
+    return snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...(docSnap.data() as Omit<Pago, 'id'>),
+    }));
   }
 }

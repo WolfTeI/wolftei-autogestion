@@ -44,6 +44,7 @@ export interface Proyecto {
   reviewCompleted?: boolean;
   reviewStars?: number;
   reviewComment?: string;
+  reviewPublicada?: boolean;
   // Bóveda de credenciales e infraestructura cifrada
   credenciales?: CredencialBoveda[];
   proveedorInfra?: string;
@@ -281,5 +282,18 @@ export class ProyectosService {
       reviewToken,
       link: `/feedback/${reviewToken}`,
     };
+  }
+
+  /**
+   * Modera una reseña alternando su visibilidad en el portal web público.
+   */
+  alternarPublicacionResena(proyectoId: string, publicada: boolean): Observable<void> {
+    const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, proyectoId);
+    return from(
+      updateDoc(docRef, {
+        reviewPublicada: publicada,
+        updatedAt: new Date().toISOString(),
+      })
+    );
   }
 }

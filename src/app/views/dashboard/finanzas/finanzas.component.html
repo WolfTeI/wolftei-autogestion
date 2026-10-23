@@ -1,0 +1,365 @@
+<div class="finanzas-container">
+  <div class="finanzas-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <h1>Finanzas & Reputación</h1>
+        <span class="badge-live">EN VIVO</span>
+      </div>
+      <p class="subtitle">
+        Control de cobranzas, cuentas corrientes, emisión de recibos oficiales y moderación de testimonios.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" (click)="exportarLibroCobranzasCSV()" matTooltip="Exportar libro de cobranzas a CSV">
+        <mat-icon>file_download</mat-icon>
+        Exportar Libro CSV
+      </button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando información contable y reseñas...</p>
+    </div>
+  } @else {
+    <mat-tab-group animationDuration="200ms" class="custom-tabs">
+      
+      <!-- ── TAB 1: COBRANZAS Y CUENTAS CORRIENTES ── -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">payments</mat-icon>
+          <span>Cobranzas & Cuentas Corrientes</span>
+        </ng-template>
+
+        <div class="tab-content">
+          <!-- KPIs Financieros -->
+          <div class="kpis-grid">
+            <mat-card class="kpi-card cobrado-usd">
+              <div class="kpi-icon-wrap">
+                <mat-icon>attach_money</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <span class="kpi-label">Cobrado en Dólares</span>
+                <strong class="kpi-amount">{{ totalCobradoUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+                <small class="kpi-desc">Total acreditado en USD</small>
+              </div>
+            </mat-card>
+
+            <mat-card class="kpi-card cobrado-ars">
+              <div class="kpi-icon-wrap">
+                <mat-icon>account_balance_wallet</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <span class="kpi-label">Cobrado en Pesos</span>
+                <strong class="kpi-amount">{{ totalCobradoARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</strong>
+                <small class="kpi-desc">Total acreditado en ARS</small>
+              </div>
+            </mat-card>
+
+            <mat-card class="kpi-card pendiente-usd">
+              <div class="kpi-icon-wrap">
+                <mat-icon>pending_actions</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <span class="kpi-label">Por Cobrar en USD</span>
+                <strong class="kpi-amount">{{ saldoPendienteUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+                <small class="kpi-desc">Anticipos y saldos pendientes</small>
+              </div>
+            </mat-card>
+
+            <mat-card class="kpi-card pendiente-ars">
+              <div class="kpi-icon-wrap">
+                <mat-icon>receipt_long</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <span class="kpi-label">Por Cobrar en ARS</span>
+                <strong class="kpi-amount">{{ saldoPendienteARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</strong>
+                <small class="kpi-desc">Anticipos y saldos pendientes</small>
+              </div>
+            </mat-card>
+          </div>
+
+          <!-- Sección Cuentas por Cobrar (Saldos pendientes) -->
+          <div class="section-box">
+            <div class="section-header">
+              <div>
+                <h2>Cuentas por Cobrar (Propuestas Aceptadas)</h2>
+                <p>Contratos en curso con anticipos o saldos pendientes de acreditación.</p>
+              </div>
+              <span class="badge-count">{{ cuentasPorCobrar().length }} pendientes</span>
+            </div>
+
+            @if (cuentasPorCobrar().length === 0) {
+              <div class="empty-box">
+                <mat-icon>check_circle</mat-icon>
+                <span>¡Excelente! No hay contratos activos con saldos adeudados.</span>
+              </div>
+            } @else {
+              <div class="table-container">
+                <table mat-table [dataSource]="cuentasPorCobrar()" class="custom-table">
+                  <ng-container matColumnDef="cliente">
+                    <th mat-header-cell *matHeaderCellDef>Cliente</th>
+                    <td mat-cell *matCellDef="let c">
+                      <strong>{{ c.clientName }}</strong>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="proyecto">
+                    <th mat-header-cell *matHeaderCellDef>Proyecto / Propuesta</th>
+                    <td mat-cell *matCellDef="let c">
+                      <span class="project-title">{{ c.projectTitle }}</span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="total">
+                    <th mat-header-cell *matHeaderCellDef>Inversión Total</th>
+                    <td mat-cell *matCellDef="let c">
+                      {{ c.totalAmount | currency: c.currency : 'symbol' : '1.0-0' }} {{ c.currency }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="cobrado">
+                    <th mat-header-cell *matHeaderCellDef>Cobrado</th>
+                    <td mat-cell *matCellDef="let c">
+                      <div class="cobrado-cell">
+                        <span class="cobrado-val">{{ c.totalCobrado | currency: c.currency : 'symbol' : '1.0-0' }}</span>
+                        <div class="progress-bar-wrap">
+                          <div class="progress-bar-fill" [style.width.%]="c.porcentajeCobrado"></div>
+                        </div>
+                        <small class="pct-text">{{ c.porcentajeCobrado }}%</small>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="saldo">
+                    <th mat-header-cell *matHeaderCellDef>Saldo Pendiente</th>
+                    <td mat-cell *matCellDef="let c">
+                      <strong class="saldo-alert">
+                        {{ c.saldoPendiente | currency: c.currency : 'symbol' : '1.0-0' }} {{ c.currency }}
+                      </strong>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="acciones">
+                    <th mat-header-cell *matHeaderCellDef class="text-right">Acción</th>
+                    <td mat-cell *matCellDef="let c" class="text-right">
+                      <button mat-flat-button color="primary" class="btn-action-cobrar" (click)="cobrarCuentaPendiente(c)">
+                        <mat-icon>add_card</mat-icon> Registrar Cobro
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="columnasPendientes"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnasPendientes;"></tr>
+                </table>
+              </div>
+            }
+          </div>
+
+          <!-- Sección Historial de Cobros / Libro Diario -->
+          <div class="section-box">
+            <div class="section-header">
+              <div>
+                <h2>Libro Diario de Cobranzas y Recibos</h2>
+                <p>Historial cronológico de pagos recibidos con descarga instantánea de Recibo Oficial en PDF.</p>
+              </div>
+              <span class="badge-count">{{ pagos().length }} recibos</span>
+            </div>
+
+            @if (pagos().length === 0) {
+              <div class="empty-box">
+                <mat-icon>receipt</mat-icon>
+                <span>Aún no hay cobranzas registradas en el sistema.</span>
+              </div>
+            } @else {
+              <div class="table-container">
+                <table mat-table [dataSource]="pagos()" class="custom-table">
+                  <ng-container matColumnDef="fecha">
+                    <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                    <td mat-cell *matCellDef="let p">
+                      {{ p.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="recibo">
+                    <th mat-header-cell *matHeaderCellDef>Recibo N°</th>
+                    <td mat-cell *matCellDef="let p">
+                      <code class="recibo-code">{{ p.receiptNumber || 'REC-S/N' }}</code>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="cliente">
+                    <th mat-header-cell *matHeaderCellDef>Cliente</th>
+                    <td mat-cell *matCellDef="let p">
+                      <strong>{{ getNombreClientePorId(p.clientId) }}</strong>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="concepto">
+                    <th mat-header-cell *matHeaderCellDef>Concepto</th>
+                    <td mat-cell *matCellDef="let p">
+                      <span class="badge-concepto" [class]="p.concept">
+                        {{ p.concept | uppercase }}
+                      </span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="metodo">
+                    <th mat-header-cell *matHeaderCellDef>Medio de Pago</th>
+                    <td mat-cell *matCellDef="let p">
+                      <span class="badge-metodo">{{ p.paymentMethod | uppercase }}</span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="monto">
+                    <th mat-header-cell *matHeaderCellDef>Monto Acreditado</th>
+                    <td mat-cell *matCellDef="let p">
+                      <strong class="monto-val">
+                        {{ p.amount | currency: p.currency : 'symbol' : '1.0-0' }} {{ p.currency }}
+                      </strong>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="acciones">
+                    <th mat-header-cell *matHeaderCellDef class="text-right">Recibo Oficial</th>
+                    <td mat-cell *matCellDef="let p" class="text-right">
+                      <button
+                        mat-stroked-button
+                        color="primary"
+                        class="btn-sm"
+                        (click)="descargarRecibo(p)"
+                        matTooltip="Descargar Recibo Oficial en PDF firmado"
+                      >
+                        <mat-icon>picture_as_pdf</mat-icon> Descargar PDF
+                      </button>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="eliminarCobro(p)"
+                        matTooltip="Anular comprobante"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="columnasPagos"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnasPagos;"></tr>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── TAB 2: MODERACIÓN DE RESEÑAS WEB ── -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">rate_review</mat-icon>
+          <span>Moderador de Reseñas ({{ resenas().length }})</span>
+        </ng-template>
+
+        <div class="tab-content">
+          <!-- Banner de Satisfacción General -->
+          <div class="satisfaction-banner">
+            <div class="banner-score">
+              <span class="score-number">{{ promedioEstrellas() }}</span>
+              <div class="stars-display">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <mat-icon class="star-gold">
+                    {{ star <= promedioEstrellas() ? 'star' : (star - 0.5 <= promedioEstrellas() ? 'star_half' : 'star_border') }}
+                  </mat-icon>
+                }
+              </div>
+              <small class="score-sub">Puntuación Media CSAT</small>
+            </div>
+
+            <div class="banner-kpis">
+              <div class="kpi-mini">
+                <strong>{{ resenas().length }}</strong>
+                <span>Reseñas Recibidas</span>
+              </div>
+              <div class="kpi-mini">
+                <strong>{{ tasaSatisfaccion() }}%</strong>
+                <span>Índice de Satisfacción</span>
+              </div>
+              <div class="kpi-mini">
+                <strong>{{ resenas().filter(r => r.publicada).length }}</strong>
+                <span>Publicadas en Web</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Listado de Reseñas para Moderación -->
+          <div class="reviews-section">
+            <div class="section-header">
+              <div>
+                <h2>Opiniones de Clientes (/feedback)</h2>
+                <p>Revisá las valoraciones y decidí cuáles se publican en el sitio web institucional.</p>
+              </div>
+            </div>
+
+            @if (resenas().length === 0) {
+              <div class="empty-box">
+                <mat-icon>sentiment_satisfied</mat-icon>
+                <span>Aún no hay reseñas completadas por clientes. Entregá proyectos para enviarles su link de feedback.</span>
+              </div>
+            } @else {
+              <div class="reviews-grid">
+                @for (item of resenas(); track item.proyectoId) {
+                  <mat-card class="review-card" [class.publicada]="item.publicada">
+                    <div class="review-header">
+                      <div class="review-meta">
+                        <div class="client-avatar">
+                          {{ item.clientName.charAt(0) | uppercase }}
+                        </div>
+                        <div>
+                          <strong>{{ item.clientName }}</strong>
+                          <span class="review-project">{{ item.proyectoTitle }}</span>
+                        </div>
+                      </div>
+                      <div class="stars-row">
+                        @for (s of [1,2,3,4,5]; track s) {
+                          <mat-icon class="star-icon" [class.filled]="s <= item.stars">star</mat-icon>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="review-body">
+                      @if (item.comment) {
+                        <p class="comment-text">"{{ item.comment }}"</p>
+                      } @else {
+                        <p class="comment-empty">El cliente calificó con {{ item.stars }} estrellas sin comentario adicional.</p>
+                      }
+                      <small class="review-date">Recibida el {{ item.fecha | date: 'dd/MM/yyyy' }}</small>
+                    </div>
+
+                    <div class="review-footer">
+                      <div class="toggle-wrap">
+                        <mat-slide-toggle
+                          color="primary"
+                          [checked]="item.publicada"
+                          (change)="cambiarEstadoPublicacion(item, $event.checked)"
+                        >
+                          <span class="toggle-label">
+                            {{ item.publicada ? 'Visible en Web' : 'Privada / Oculta' }}
+                          </span>
+                        </mat-slide-toggle>
+                      </div>
+
+                      <button mat-icon-button (click)="copiarTestimonio(item)" matTooltip="Copiar testimonio para redes o WhatsApp">
+                        <mat-icon>content_copy</mat-icon>
+                      </button>
+                    </div>
+                  </mat-card>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  }
+</div>
