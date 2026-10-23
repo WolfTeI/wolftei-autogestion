@@ -15,6 +15,20 @@ import {
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 
+export interface CredencialBoveda {
+  id: string;
+  servicio: string;
+  tipo: 'hosting' | 'dominio' | 'servidor' | 'base_de_datos' | 'otro';
+  usuario: string;
+  cipherTextHex: string;
+  ivHex: string;
+  saltHex: string;
+  urlAcceso?: string;
+  vencimientoFecha?: string;
+  notas?: string;
+  createdAt: string;
+}
+
 export interface Proyecto {
   id?: string;
   clientId: string;
@@ -30,6 +44,16 @@ export interface Proyecto {
   reviewCompleted?: boolean;
   reviewStars?: number;
   reviewComment?: string;
+  // Bóveda de credenciales e infraestructura cifrada
+  credenciales?: CredencialBoveda[];
+  proveedorInfra?: string;
+  cuentaInfra?: string;
+  dominio?: string;
+  vencimientoHosting?: string;
+  vencimientoDominio?: string;
+  // Constancia de Acta de Garantía
+  actaGarantiaGenerada?: boolean;
+  actaGarantiaFecha?: string;
   createdAt?: string;
   updatedAt?: string;
 }

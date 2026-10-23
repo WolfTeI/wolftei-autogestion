@@ -83,8 +83,13 @@
                     </span>
 
                     <div class="card-actions">
+                      <!-- Bóveda Segura de Accesos -->
+                      <button mat-icon-button (click)="abrirBoveda(p)" matTooltip="Bóveda Segura de Credenciales (AES-GCM)">
+                        <mat-icon style="color: #a78bfa;">lock</mat-icon>
+                      </button>
+
                       <!-- Menú de Documentos Legales -->
-                      <button mat-icon-button [matMenuTriggerFor]="cardDocMenu" matTooltip="Documentos legales (Contrato / NDA)">
+                      <button mat-icon-button [matMenuTriggerFor]="cardDocMenu" matTooltip="Documentos legales (Contrato / NDA / Garantía)">
                         <mat-icon>gavel</mat-icon>
                       </button>
                       <mat-menu #cardDocMenu="matMenu">
@@ -95,6 +100,10 @@
                         <button mat-menu-item (click)="descargarNDAProyecto(p)">
                           <mat-icon>lock</mat-icon>
                           <span>Acuerdo Confidencialidad NDA (PDF)</span>
+                        </button>
+                        <button mat-menu-item (click)="descargarActaGarantia(p)">
+                          <mat-icon style="color: #10b981;">verified</mat-icon>
+                          <span>Acta de Entrega y Garantía 30d (PDF)</span>
                         </button>
                         <mat-divider></mat-divider>
                         <button mat-menu-item (click)="descargarCarpetaProyecto(p)">
@@ -180,7 +189,11 @@
             <th mat-header-cell *matHeaderCellDef> Acciones </th>
             <td mat-cell *matCellDef="let element">
               <div class="table-actions">
-                <button mat-icon-button [matMenuTriggerFor]="tableDocMenu" matTooltip="Documentos legales (Contrato / NDA)">
+                <button mat-icon-button (click)="abrirBoveda(element)" matTooltip="Bóveda Segura de Credenciales (AES-GCM)">
+                  <mat-icon style="color: #a78bfa;">lock</mat-icon>
+                </button>
+
+                <button mat-icon-button [matMenuTriggerFor]="tableDocMenu" matTooltip="Documentos legales (Contrato / NDA / Garantía)">
                   <mat-icon>gavel</mat-icon>
                 </button>
                 <mat-menu #tableDocMenu="matMenu">
@@ -191,6 +204,10 @@
                   <button mat-menu-item (click)="descargarNDAProyecto(element)">
                     <mat-icon>lock</mat-icon>
                     <span>Acuerdo Confidencialidad NDA (PDF)</span>
+                  </button>
+                  <button mat-menu-item (click)="descargarActaGarantia(element)">
+                    <mat-icon style="color: #10b981;">verified</mat-icon>
+                    <span>Acta de Entrega y Garantía 30d (PDF)</span>
                   </button>
                   <mat-divider></mat-divider>
                   <button mat-menu-item (click)="descargarCarpetaProyecto(element)">

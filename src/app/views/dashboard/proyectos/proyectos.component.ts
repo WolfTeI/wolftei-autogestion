@@ -15,9 +15,12 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../../../utils/contract-pdf-generator';
+import { generateActaGarantiaPDF } from '../../../utils/acta-garantia-pdf-generator';
+import { BovedaCredencialesDialogComponent } from './boveda-dialog/boveda-dialog.component';
 
 export interface ProyectoView extends Proyecto {
   clientName?: string;
@@ -48,7 +51,8 @@ export const KANBAN_COLUMNS = [
     MatSnackBarModule,
     MatMenuModule,
     MatButtonToggleModule,
-    MatDividerModule
+    MatDividerModule,
+    MatDialogModule
   ],
   templateUrl: './proyectos.component.html',
   styleUrls: ['./proyectos.component.scss']
@@ -58,6 +62,7 @@ export class ProyectosComponent implements OnInit, OnDestroy {
   private clientesService = inject(ClientesService);
   private whatsAppService = inject(WhatsAppService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
   private sub?: Subscription;
 
   proyectos = signal<ProyectoView[]>([]);
@@ -255,4 +260,50 @@ Saludos,
     }, 450);
     this.snackBar.open('🖨️ Carpeta legal descargada (Contrato + NDA listos para imprimir).', 'Cerrar', { duration: 4000 });
   }
+
+  /**
+   * Abre el diálogo de Bóveda Segura de Credenciales cifradas con AES-256-GCM.
+   */
+  abrirBoveda(proyecto: ProyectoView) {
+    this.dialog.open(BovedaCredencialesDialogComponent, {
+      width: '680px',
+      data: { proyecto },
+    });
+  }
+
+  /**
+   * Genera y descarga el Acta Oficial de Entrega y Garantía Técnica de 30 días en PDF.
+   */
+  descargarActaGarantia(p: ProyectoView) {
+    generateActaGarantiaPDF({
+      proyectoTitulo: p.title,
+      clienteNombre: p.clientName || 'Cliente',
+      clienteCuit: p.cliente?.taxId || 'No informado',
+      proveedorInfra: p.proveedorInfra || 'Hostinger',
+      cuentaInfra: p.cuentaInfra || p.cliente?.email || 'Cuenta directa del cliente',
+      dominio: p.dominio || 'Dominio del cliente',
+      fechaEntrega: p.endDate || new Date().toISOString().split('T')[0],
+      garantiaDias: 30,
+    });
+    this.snackBar.open('🛡️ Acta de Entrega y Garantía Técnica (30 días) descargada con éxito.', 'Cerrar', { duration: 3500 });
+  }
+
+  /**
+   * Calcula días restantes para un vencimiento.
+   */
+  diasParaVencimiento(fechaStr?: string): number | null {
+    if (!fechaStr) return null;
+    const diff = new Date(fechaStr).getTime() - Date.now();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+
+  /**
+   * Determina si el hosting o dominio vence en los próximos 30 días.
+   */
+  alertaVencimiento(p: ProyectoView): boolean {
+    const dH = this.diasParaVencimiento(p.vencimientoHosting);
+    const dD = this.diasParaVencimiento(p.vencimientoDominio);
+    return (dH !== null && dH <= 30) || (dD !== null && dD <= 30);
+  }
 }
+
