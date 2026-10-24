@@ -101,6 +101,14 @@ export const routes: Routes = [
             (m) => m.FinanzasComponent,
           ),
       },
+      // ── Histórico y Expedientes Cerrados ──
+      {
+        path: 'historico',
+        loadComponent: () =>
+          import('./views/dashboard/historico/historico.component').then(
+            (m) => m.HistoricoComponent,
+          ),
+      },
     ],
   },
   {

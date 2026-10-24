@@ -1,0 +1,199 @@
+<div class="historico-container">
+  <div class="historico-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <h1>Histórico & Expedientes Cerrados</h1>
+        <span class="badge-vault">ARCHIVO SEGURO</span>
+      </div>
+      <p class="subtitle">
+        Consulta centralizada de proyectos completados, contratos auditados con firma e IP, y gestión de mantenimiento recurrente.
+      </p>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando expedientes del archivo histórico...</p>
+    </div>
+  } @else {
+    <!-- KPIs del Archivo Histórico -->
+    <div class="kpis-grid">
+      <mat-card class="kpi-card total">
+        <div class="kpi-icon-wrap">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Proyectos Archivados</span>
+          <strong class="kpi-amount">{{ totalArchivados() }} expedientes</strong>
+          <small class="kpi-desc">Casos cerrados y auditados</small>
+        </div>
+      </mat-card>
+
+      <mat-card class="kpi-card facturado">
+        <div class="kpi-icon-wrap">
+          <mat-icon>payments</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Facturación Histórica</span>
+          <strong class="kpi-amount">{{ montoTotalHistoricoUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+          <small class="kpi-desc">Total liquidado en contratos cerrados</small>
+        </div>
+      </mat-card>
+
+      <mat-card class="kpi-card upselling">
+        <div class="kpi-icon-wrap">
+          <mat-icon>support_agent</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Garantías Vencidas (+30d)</span>
+          <strong class="kpi-amount">{{ oportunidadesMantenimiento() }} clientes</strong>
+          <small class="kpi-desc">Listos para ofrecer plan de mantenimiento</small>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Barra de Búsqueda y Filtro -->
+    <div class="search-bar-wrap">
+      <mat-form-field appearance="outline" class="search-input">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>Buscar por proyecto o cliente...</mat-label>
+        <input matInput [(ngModel)]="busqueda" placeholder="Ej: Landing, App Móvil, Juan Pérez..." />
+        @if (busqueda()) {
+          <button mat-icon-button matSuffix (click)="busqueda.set('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Tabla de Expedientes -->
+    <div class="table-card">
+      @if (proyectosFiltrados().length === 0) {
+        <div class="empty-box">
+          <mat-icon>folder_open</mat-icon>
+          <span>No se encontraron expedientes en el archivo histórico.</span>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table mat-table [dataSource]="proyectosFiltrados()" class="historico-table">
+            
+            <!-- Fecha Cierre -->
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha Cierre</th>
+              <td mat-cell *matCellDef="let p">
+                <span class="fecha-text">{{ (p.archivadoFecha || p.updatedAt || p.createdAt) | date: 'dd/MM/yyyy' }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Proyecto -->
+            <ng-container matColumnDef="proyecto">
+              <th mat-header-cell *matHeaderCellDef>Proyecto</th>
+              <td mat-cell *matCellDef="let p">
+                <div class="project-cell">
+                  <strong>{{ p.title }}</strong>
+                  <span class="badge-status-p" [class]="p.status">
+                    {{ p.status === 'cancelado' ? 'Cancelado' : 'Completado' }}
+                  </span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Cliente -->
+            <ng-container matColumnDef="cliente">
+              <th mat-header-cell *matHeaderCellDef>Cliente</th>
+              <td mat-cell *matCellDef="let p">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span class="client-name">{{ p.clientName || 'Cliente' }}</span>
+                  <button mat-icon-button (click)="abrirEditarCliente(p); $event.stopPropagation()" matTooltip="Editar / Completar datos del cliente" style="width: 24px; height: 24px; line-height: 24px;">
+                    <mat-icon style="font-size: 15px; width: 15px; height: 15px; color: #60a5fa;">edit</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Inversión Total -->
+            <ng-container matColumnDef="inversion">
+              <th mat-header-cell *matHeaderCellDef>Inversión Total</th>
+              <td mat-cell *matCellDef="let p">
+                <strong class="monto-val">
+                  {{ p.totalAmount | currency: p.currency : 'symbol' : '1.0-0' }} {{ p.currency }}
+                </strong>
+              </td>
+            </ng-container>
+
+            <!-- Reseña CSAT -->
+            <ng-container matColumnDef="resena">
+              <th mat-header-cell *matHeaderCellDef>Calificación</th>
+              <td mat-cell *matCellDef="let p">
+                @if (p.reviewCompleted) {
+                  <div class="stars-cell" matTooltip="Calificación del cliente">
+                    <mat-icon class="star-icon">star</mat-icon>
+                    <strong>{{ p.reviewStars }}</strong>
+                    <small>/5</small>
+                  </div>
+                } @else {
+                  <span class="sin-resena">Sin reseña</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Garantía & Mantenimiento -->
+            <ng-container matColumnDef="garantia">
+              <th mat-header-cell *matHeaderCellDef>Garantía Técnica</th>
+              <td mat-cell *matCellDef="let p">
+                @if (p.garantiaVencida) {
+                  <div class="garantia-cell">
+                    <span class="badge-vencida">Vencida (+30d)</span>
+                    <button
+                      mat-stroked-button
+                      class="btn-mantenimiento"
+                      (click)="ofrecerMantenimiento(p)"
+                      matTooltip="Ofrecer abono de mantenimiento mensual por WhatsApp"
+                    >
+                      <mat-icon style="color: #25d366;">chat</mat-icon>
+                      Ofrecer Mantenimiento
+                    </button>
+                  </div>
+                } @else {
+                  <span class="badge-activa">
+                    <mat-icon>verified</mat-icon>
+                    Activa (Día {{ p.diasDesdeEntrega }}/30)
+                  </span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Acciones -->
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Expediente</th>
+              <td mat-cell *matCellDef="let p" class="text-right">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  class="btn-expediente"
+                  (click)="abrirExpediente(p)"
+                  matTooltip="Ver auditoría, timeline y descargar dossier"
+                >
+                  <mat-icon>history_edu</mat-icon>
+                  Ver Expediente
+                </button>
+
+                <button
+                  mat-icon-button
+                  (click)="desarchivarAProyectos(p)"
+                  matTooltip="Reactivar y devolver al Tablero Kanban de Proyectos"
+                >
+                  <mat-icon>unarchive</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas;" class="table-row"></tr>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>

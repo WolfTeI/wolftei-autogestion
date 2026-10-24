@@ -43,7 +43,7 @@ export interface ResenaCliente {
   comment: string;
   fecha: string;
   publicada: boolean;
-  token?: string;
+  token?: string | null;
 }
 
 @Component({

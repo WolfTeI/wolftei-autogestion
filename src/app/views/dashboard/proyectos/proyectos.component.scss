@@ -198,6 +198,46 @@
       text-decoration: none;
       &:hover { text-decoration: underline; }
     }
+
+    .btn-edit-client {
+      width: 22px;
+      height: 22px;
+      line-height: 22px;
+      margin-left: 2px;
+      opacity: 0.5;
+      &:hover { opacity: 1; color: #60a5fa; }
+      mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    }
+  }
+
+  .card-sla {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 8px 0;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      color: #60a5fa;
+    }
+
+    &.alerta {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.3);
+
+      mat-icon {
+        color: #fbbf24;
+      }
+    }
   }
 
   .card-footer {

@@ -134,4 +134,28 @@ Ya agendamos el alcance en nuestro tablero de desarrollo y estamos preparando el
 
 ¡Muchas gracias por confiar en *WolfTeI*!`;
   }
+
+  /**
+   * Genera mensaje cordial avisando el fin de los 30 días de garantía técnica y ofreciendo plan de mantenimiento.
+   */
+  generarMensajeVencimientoGarantiaMantenimiento(clienteNombre: string, proyectoTitulo: string): string {
+    return `¡Hola ${clienteNombre}! 👋 ¿Cómo estás?
+
+Te escribo desde *WolfTeI* respecto a tu proyecto *"${proyectoTitulo}"*.
+
+Te comento que han finalizado los 30 días corridos de garantía técnica y soporte gratuito incluidos en el Acta de Entrega. Queríamos consultarte si todo viene funcionando de diez y si te gustaría que coordinemos nuestro plan de **Mantenimiento Mensual, Backups & Monitoreo de Seguridad**, para que tu plataforma siga 100% protegida y optimizada mes a mes sin que tengas que preocuparte por nada.
+
+Si te interesa, avisame y te paso una propuesta simple y a medida.
+
+¡Un saludo cordial!
+*WolfTeI* — Soluciones de Software`;
+  }
+
+  /**
+   * Abre chat directo para ofrecer plan de mantenimiento tras vencer la garantía.
+   */
+  abrirVencimientoGarantia(telefono: string, clienteNombre: string, proyectoTitulo: string): Promise<boolean> {
+    const msg = this.generarMensajeVencimientoGarantiaMantenimiento(clienteNombre, proyectoTitulo);
+    return this.abrirChat(telefono, msg);
+  }
 }

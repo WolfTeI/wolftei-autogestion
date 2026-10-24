@@ -13,7 +13,12 @@
       </button>
       <div class="header-info">
         <h1>{{ p.title }}</h1>
-        <p class="subtitle">{{ p.clientPreviewName }}</p>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <p class="subtitle" style="margin: 0;">{{ p.clientPreviewName }}</p>
+          <button mat-icon-button (click)="abrirEditarCliente()" matTooltip="Completar o editar datos fiscales y de contacto del cliente" style="width: 28px; height: 28px; line-height: 28px;">
+            <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #60a5fa;">edit</mat-icon>
+          </button>
+        </div>
       </div>
       <span class="status-chip" [style.color]="getStatusColor(p.status ?? '')" [style.border-color]="getStatusColor(p.status ?? '')">
         {{ getStatusLabel(p.status ?? '') }}
@@ -21,6 +26,9 @@
       <div class="header-actions">
         <button mat-stroked-button (click)="enviarPorWhatsApp()" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4);" matTooltip="Enviar link y propuesta por WhatsApp">
           <mat-icon style="color: #10b981;">chat</mat-icon> WhatsApp
+        </button>
+        <button mat-stroked-button (click)="abrirEditarCliente()" matTooltip="Cargar CUIT, teléfono, dirección y empresa">
+          <mat-icon style="color: #60a5fa;">person</mat-icon> Datos Cliente
         </button>
         <button mat-stroked-button (click)="editarPropuesta()">
           <mat-icon>edit</mat-icon> Editar Presupuesto
@@ -118,6 +126,29 @@
             </div>
           </div>
         </div>
+      </mat-card>
+
+      <!-- Datos del Cliente y Facturación -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <mat-card-title><mat-icon>person</mat-icon> Cliente & Facturación</mat-card-title>
+            <button mat-stroked-button color="primary" (click)="abrirEditarCliente()" style="font-size: 0.8rem; height: 32px; padding: 0 10px;">
+              <mat-icon style="font-size: 16px; width: 16px; height: 16px;">edit</mat-icon>
+              {{ cliente() ? 'Editar Cliente' : 'Completar Datos' }}
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          <dl>
+            <dt>Razón Social / Nombre</dt><dd><strong>{{ cliente()?.name || p.clientPreviewName || 'No informado' }}</strong></dd>
+            <dt>Empresa</dt><dd>{{ cliente()?.company || 'Particular / No informada' }}</dd>
+            <dt>CUIT / DNI</dt><dd>{{ cliente()?.taxId || p.clientTaxId || '— (Requerido para contrato)' }}</dd>
+            <dt>Teléfono WhatsApp</dt><dd>{{ cliente()?.phone || '—' }}</dd>
+            <dt>Email</dt><dd>{{ cliente()?.email || p.clientPreviewEmail || '—' }}</dd>
+            <dt>Dirección Fiscal</dt><dd>{{ cliente()?.address || '—' }}</dd>
+          </dl>
+        </mat-card-content>
       </mat-card>
 
       <!-- Datos básicos -->

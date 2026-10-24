@@ -68,6 +68,7 @@ export interface Propuesta {
   infrastructureItems?: InfraItem[];
   pricingDetails?: PricingDetails;
   status?: string;
+  proyectoId?: string;
   createdAt?: string;
   updatedAt?: string;
   viewedAt?: string;

@@ -9,10 +9,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 
 import { PropuestasService, Propuesta } from '../../../service/propuestas.service';
 import { WhatsAppService } from '../../../service/whatsapp.service';
+import { ProyectosService } from '../../../service/proyectos.service';
+import { ClientesService, Cliente } from '../../../service/clientes.service';
+import { EditarClienteDialogComponent } from '../clientes/editar-cliente-dialog/editar-cliente-dialog.component';
 
 /** Configuración de estados para filtros y menú */
 const ESTADOS = [
@@ -41,38 +45,47 @@ const ESTADOS = [
     MatProgressSpinnerModule,
     MatDividerModule,
     MatSnackBarModule,
+    MatDialogModule,
   ],
   templateUrl: './propuestas.component.html',
   styleUrl: './propuestas.component.scss',
 })
 export class PropuestasComponent implements OnInit, OnDestroy {
   private propuestasService = inject(PropuestasService);
+  private proyectosService = inject(ProyectosService);
   private whatsappService = inject(WhatsAppService);
+  private clientesService = inject(ClientesService);
+  private dialog = inject(MatDialog);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
   private sub?: Subscription;
 
   cargando = signal(true);
   propuestas = signal<Propuesta[]>([]);
-  filtroActivo = 'todos';
+  filtroActivo = 'activas';
   columnas = ['numero', 'cliente', 'monto', 'estado', 'fecha', 'acciones'];
   estadosValidos = ESTADOS;
 
   /** Filtros de la barra superior con conteo dinámico */
   get filtros() {
     const todos = this.propuestas();
+    const activas = todos.filter((p) => !p.status || p.status === 'borrador' || p.status === 'enviado' || p.status === 'visto' || p.status === 'aceptado');
     return [
-      { value: 'todos', label: 'Todos', color: '#667eea', count: todos.length },
+      { value: 'activas', label: 'En Negociación', color: '#667eea', count: activas.length },
       ...ESTADOS.map((e) => ({
         ...e,
         count: todos.filter((p) => p.status === e.value).length,
       })),
+      { value: 'todos', label: 'Histórico Total', color: '#94a3b8', count: todos.length },
     ];
   }
 
   /** Propuestas filtradas según el estado activo */
   get propuestasFiltradas(): Propuesta[] {
     if (this.filtroActivo === 'todos') return this.propuestas();
+    if (this.filtroActivo === 'activas') {
+      return this.propuestas().filter((p) => !p.status || p.status === 'borrador' || p.status === 'enviado' || p.status === 'visto' || p.status === 'aceptado');
+    }
     return this.propuestas().filter((p) => p.status === this.filtroActivo);
   }
 
@@ -134,7 +147,7 @@ export class PropuestasComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Cambia el estado de una propuesta */
+  /** Cambia el estado de una propuesta y sincroniza con el Tablero de Proyectos si pasa a desarrollo */
   cambiarEstado(propuesta: Propuesta, nuevoEstado: string) {
     if (!propuesta.id) return;
     this.propuestasService.cambiarEstado(propuesta.id, nuevoEstado).subscribe({
@@ -142,7 +155,28 @@ export class PropuestasComponent implements OnInit, OnDestroy {
         this.propuestas.update((lista) =>
           lista.map((p) => (p.id === propuesta.id ? { ...p, status: nuevoEstado } : p))
         );
-        this.snackBar.open(`Estado actualizado a "${this.getStatusLabel(nuevoEstado)}"`, '', { duration: 2500 });
+
+        // Si se pasa a desarrollo o se acepta, crear/asegurar automáticamente el proyecto en el Kanban
+        if (nuevoEstado === 'en_desarrollo' || nuevoEstado === 'aceptado') {
+          this.proyectosService.crearOObtenerDesdePropuesta(propuesta).subscribe({
+            next: () => {
+              const snack = this.snackBar.open(
+                `🚀 Estado → "${this.getStatusLabel(nuevoEstado)}" y Proyecto activo en Kanban.`,
+                'Ver en Proyectos',
+                { duration: 5000 }
+              );
+              snack.onAction().subscribe(() => {
+                this.router.navigate(['/dashboard/proyectos']);
+              });
+            },
+            error: (err) => {
+              console.error('Error al sincronizar proyecto en Kanban:', err);
+              this.snackBar.open(`Estado actualizado a "${this.getStatusLabel(nuevoEstado)}"`, '', { duration: 2500 });
+            }
+          });
+        } else {
+          this.snackBar.open(`Estado actualizado a "${this.getStatusLabel(nuevoEstado)}"`, '', { duration: 2500 });
+        }
       },
       error: () => this.snackBar.open('Error al cambiar el estado', 'Cerrar', { duration: 3000 }),
     });
@@ -213,6 +247,44 @@ export class PropuestasComponent implements OnInit, OnDestroy {
     );
     await this.whatsappService.abrirChat('', msg);
     this.snackBar.open('Mensaje de bienvenida preparado en WhatsApp', '', { duration: 3000 });
+  }
+
+  /**
+   * Abre diálogo para editar o completar datos fiscales y de contacto del cliente.
+   */
+  abrirEditarCliente(p: Propuesta) {
+    if (p.clientId) {
+      this.clientesService.getCliente(p.clientId).subscribe({
+        next: (cli) => this.mostrarDialogoCliente(cli, p),
+        error: () => this.mostrarDialogoCliente(undefined, p)
+      });
+    } else {
+      this.mostrarDialogoCliente(undefined, p);
+    }
+  }
+
+  private mostrarDialogoCliente(clienteExistente: Cliente | undefined, p: Propuesta) {
+    const dialogRef = this.dialog.open(EditarClienteDialogComponent, {
+      width: '640px',
+      data: {
+        cliente: clienteExistente,
+        nombreSugerido: clienteExistente?.name || p.clientPreviewName || p.clientLegalName || '',
+        emailSugerido: clienteExistente?.email || p.clientPreviewEmail || p.clientEmail || '',
+        cuitSugerido: clienteExistente?.taxId || p.clientTaxId || '',
+        propuestaId: p.id,
+        proyectoId: p.proyectoId,
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((res: Cliente | null) => {
+      if (res) {
+        p.clientPreviewName = res.name;
+        p.clientId = res.id;
+        p.clientPreviewEmail = res.email;
+        p.clientTaxId = res.taxId;
+        this.propuestas.update(list => [...list]);
+      }
+    });
   }
 }
 

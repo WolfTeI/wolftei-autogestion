@@ -65,6 +65,15 @@
                           </button>
                         }
                       }
+                      <mat-divider></mat-divider>
+                      <button mat-menu-item (click)="abrirEditarCliente(p)">
+                        <mat-icon style="color: #60a5fa;">person</mat-icon>
+                        Completar / Editar Cliente
+                      </button>
+                      <button mat-menu-item (click)="archivarProyecto(p)">
+                        <mat-icon style="color: #94a3b8;">archive</mat-icon>
+                        Archivar en Histórico
+                      </button>
                     </mat-menu>
                   </div>
 
@@ -72,9 +81,22 @@
 
                   <div class="card-client">
                     <mat-icon>business</mat-icon>
-                    <a [routerLink]="['/dashboard/clientes', p.clientId]" class="client-link">
+                    <a [routerLink]="['/dashboard/clientes', p.clientId]" class="client-link" *ngIf="p.clientId; else clienteSinLink">
                       {{ p.clientName || 'Cliente' }}
                     </a>
+                    <ng-template #clienteSinLink>
+                      <span class="client-link">{{ p.clientName || 'Cliente' }}</span>
+                    </ng-template>
+                    <button mat-icon-button class="btn-edit-client" (click)="abrirEditarCliente(p)" matTooltip="Completar o editar datos fiscales y de contacto del cliente">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  </div>
+
+                  <!-- Cronómetro SLA de Entrega -->
+                  @let sla = calcularSla(p);
+                  <div class="card-sla" [class.alerta]="sla.esAlerta" matTooltip="Días transcurridos vs plazo pactado en el contrato">
+                    <mat-icon>{{ sla.esAlerta ? 'warning' : 'schedule' }}</mat-icon>
+                    <span>Día {{ sla.diasTranscurridos }} de {{ sla.diasTotales }}d ({{ sla.porcentaje }}%)</span>
                   </div>
 
                   <div class="card-footer">

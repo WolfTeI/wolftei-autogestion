@@ -12,6 +12,7 @@ import {
   where,
   orderBy,
   onSnapshot,
+  limit,
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 
@@ -32,15 +33,25 @@ export interface CredencialBoveda {
 export interface Proyecto {
   id?: string;
   clientId: string;
+  clientName?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientCompany?: string;
+  clientTaxId?: string;
+  propuestaId?: string;
   title: string;
   description?: string;
-  status: 'pendiente' | 'en_progreso' | 'entregado' | 'cancelado';
+  status: 'esperando_anticipo' | 'en_progreso' | 'testing' | 'entregado' | 'archivado' | 'cancelado';
   currentPhase: string;
-  startDate?: string;
-  endDate?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  deliveryDays?: number;
   totalAmount: number;
   currency: string;
-  reviewToken?: string;
+  anticipoCobrado?: boolean;
+  saldoCobrado?: boolean;
+  archivadoFecha?: string | null;
+  reviewToken?: string | null;
   reviewCompleted?: boolean;
   reviewStars?: number;
   reviewComment?: string;
@@ -293,6 +304,138 @@ export class ProyectosService {
       updateDoc(docRef, {
         reviewPublicada: publicada,
         updatedAt: new Date().toISOString(),
+      })
+    );
+  }
+
+  /**
+   * Crea o asegura la existencia de un Proyecto en la colección 'projects'
+   * a partir de una propuesta comercial aceptada o enviada a desarrollo.
+   * Evita duplicados si el proyecto ya fue generado.
+   */
+  crearOObtenerDesdePropuesta(propuesta: {
+    id?: string;
+    clientId?: string;
+    title: string;
+    objective?: string;
+    notes?: string;
+    totalAmount?: number;
+    currency?: string;
+  }): Observable<{ proyecto: Proyecto; creado: boolean }> {
+    return from(this.executeCrearOObtenerDesdePropuesta(propuesta));
+  }
+
+  private async executeCrearOObtenerDesdePropuesta(propuesta: any): Promise<{ proyecto: Proyecto; creado: boolean }> {
+    const colRef = collection(this.firebaseService.db, this.COLLECTION_NAME);
+
+    // 1. Buscar si ya existe un proyecto vinculado por propuestaId
+    if (propuesta.id) {
+      const q = query(colRef, where('propuestaId', '==', propuesta.id), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        return {
+          proyecto: { id: docSnap.id, ...(docSnap.data() as Omit<Proyecto, 'id'>) },
+          creado: false,
+        };
+      }
+    }
+
+    // 2. Si no existe, asegurar cliente en la colección 'clients'
+    const now = new Date().toISOString();
+    const deliveryDays = Number(propuesta.deliveryTimeDays) || 20;
+    const clientNombre = propuesta.clientLegalName || propuesta.clientPreviewName || 'Cliente';
+    const clientEmail = propuesta.clientEmail || propuesta.clientPreviewEmail || '';
+    const clientTaxId = propuesta.clientTaxId || '';
+
+    let finalClientId = propuesta.clientId || '';
+
+    // Si la propuesta no tenía clientId formal pero sí tiene nombre, buscar o crear el cliente en CRM
+    if (!finalClientId && clientNombre && clientNombre !== 'Cliente') {
+      try {
+        const clientsCol = collection(this.firebaseService.db, 'clients');
+        const qCli = query(clientsCol, where('name', '==', clientNombre), limit(1));
+        const snapCli = await getDocs(qCli);
+        if (!snapCli.empty) {
+          finalClientId = snapCli.docs[0].id;
+        } else {
+          // Crear automáticamente el cliente para integrarlo formalmente al CRM
+          const newCliRef = await addDoc(clientsCol, {
+            name: clientNombre,
+            email: clientEmail,
+            taxId: clientTaxId,
+            company: '',
+            phone: '',
+            address: '',
+            notes: `Alta automática generada al pasar propuesta "${propuesta.title}" a desarrollo.`,
+            createdAt: now,
+            updatedAt: now,
+          });
+          finalClientId = newCliRef.id;
+        }
+      } catch (e) {
+        console.warn('Error al auto-registrar cliente en CRM:', e);
+      }
+    }
+
+    const payload = {
+      clientId: finalClientId,
+      clientName: clientNombre,
+      clientEmail,
+      clientTaxId,
+      propuestaId: propuesta.id || null,
+      title: propuesta.title || 'Nuevo Proyecto',
+      description: propuesta.objective || propuesta.notes || 'Proyecto generado a partir de propuesta comercial.',
+      status: 'esperando_anticipo' as const,
+      currentPhase: 'Anticipo',
+      startDate: now,
+      endDate: null,
+      deliveryDays,
+      totalAmount: Number(propuesta.totalAmount) || 0,
+      currency: propuesta.currency || 'USD',
+      anticipoCobrado: false,
+      saldoCobrado: false,
+      archivadoFecha: null,
+      reviewToken: null,
+      reviewCompleted: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const docRef = await addDoc(colRef, payload);
+    const nuevoProyecto: Proyecto = { id: docRef.id, ...payload };
+
+    // 3. Vincular bidireccionalmente el proyectoId y clientId en la propuesta
+    if (propuesta.id) {
+      try {
+        const propRef = doc(this.firebaseService.db, 'proposals', propuesta.id);
+        const updateData: any = {
+          proyectoId: docRef.id,
+          updatedAt: now,
+        };
+        if (finalClientId && !propuesta.clientId) {
+          updateData.clientId = finalClientId;
+        }
+        await updateDoc(propRef, updateData);
+      } catch (err) {
+        console.warn('No se pudo actualizar propuesta con proyectoId/clientId:', err);
+      }
+    }
+
+    return { proyecto: nuevoProyecto, creado: true };
+  }
+
+  /**
+   * Archiva un proyecto completado o cancelado y lo deriva a la sección Histórico.
+   */
+  archivarProyecto(id: string): Observable<void> {
+    const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, id);
+    const now = new Date().toISOString();
+    return from(
+      updateDoc(docRef, {
+        status: 'archivado',
+        archivadoFecha: now,
+        updatedAt: now,
       })
     );
   }

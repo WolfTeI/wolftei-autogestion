@@ -1,0 +1,318 @@
+.historico-container {
+  padding: 24px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.historico-header {
+  margin-bottom: 24px;
+
+  .header-titles {
+    .title-with-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      h1 {
+        margin: 0;
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        letter-spacing: -0.02em;
+      }
+
+      .badge-vault {
+        background: rgba(148, 163, 184, 0.15);
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 9999px;
+        letter-spacing: 0.08em;
+      }
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: #94a3b8;
+      font-size: 0.95rem;
+      max-width: 900px;
+    }
+  }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  gap: 16px;
+  color: #94a3b8;
+}
+
+/* ── KPIs Grid ── */
+.kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+
+  .kpi-card {
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+
+    .kpi-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    &.total .kpi-icon-wrap {
+      background: rgba(100, 116, 139, 0.2);
+      color: #94a3b8;
+    }
+    &.facturado .kpi-icon-wrap {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+    &.upselling .kpi-icon-wrap {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+
+    .kpi-info {
+      display: flex;
+      flex-direction: column;
+
+      .kpi-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        font-weight: 600;
+      }
+
+      .kpi-amount {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #f8fafc;
+        margin: 2px 0;
+      }
+
+      .kpi-desc {
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+    }
+  }
+}
+
+/* ── Buscador ── */
+.search-bar-wrap {
+  margin-bottom: 20px;
+
+  .search-input {
+    width: 100%;
+    max-width: 460px;
+  }
+}
+
+/* ── Tabla de Expedientes ── */
+.table-card {
+  background: #1e293b;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.historico-table {
+  width: 100%;
+  background: transparent;
+
+  th {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 14px 18px;
+  }
+
+  td {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 14px 18px;
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+.text-right {
+  text-align: right;
+}
+
+.fecha-text {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.project-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  strong {
+    color: #f1f5f9;
+  }
+
+  .badge-status-p {
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+
+    &.cancelado {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    &:not(.cancelado) {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+  }
+}
+
+.client-name {
+  color: #93c5fd;
+  font-weight: 500;
+}
+
+.monto-val {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.stars-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .star-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #f59e0b;
+  }
+
+  strong {
+    color: #f59e0b;
+  }
+
+  small {
+    color: #64748b;
+  }
+}
+
+.sin-resena {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.garantia-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .badge-vencida {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .btn-mantenimiento {
+    font-size: 0.75rem;
+    padding: 0 10px;
+    height: 28px;
+    line-height: 28px;
+    border-color: rgba(37, 211, 102, 0.3);
+    color: #25d366;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      margin-right: 4px;
+    }
+  }
+}
+
+.badge-activa {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.btn-expediente {
+  font-size: 0.82rem;
+  margin-right: 6px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+  }
+}
+
+.empty-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #64748b;
+  font-size: 0.95rem;
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+}

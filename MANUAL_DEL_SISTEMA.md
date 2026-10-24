@@ -91,6 +91,17 @@ Las dos aplicaciones comparten las siguientes colecciones principales:
   - Ficha individual del cliente que consolida todos sus proyectos y propuestas vigentes.
   - Enlace rápido a WhatsApp con mensaje precargado.
 
+#### 3.4.1 Edición y Enriquecimiento Universal de Datos de Clientes en Cualquier Etapa
+- **Diálogo Modal Unificado:** `EditarClienteDialogComponent` ([editar-cliente-dialog.component.ts](file:///d:/Programacion/Github%20WolTeI/WolfTeI-autogestion/src/app/views/dashboard/clientes/editar-cliente-dialog/editar-cliente-dialog.component.ts)).
+- **Disponibilidad Total en el Flujo:**
+  1. *En Presupuestos:* Botón ✏️ en la tabla de cotizaciones, opción en el menú contextual y bloque completo *"Cliente & Facturación"* en el detalle de la propuesta.
+  2. *En Proyectos:* Botón de lápiz en la tarjeta Kanban y opción en el menú de acciones del proyecto.
+  3. *En Histórico & Expediente:* Botón de edición junto a los datos fiscales del cliente en la tabla y en el encabezado del expediente auditado.
+- **Prevención de "Cliente Desconocido":** Si una propuesta se confeccionó con un nombre informal sin dar de alta al cliente en el CRM previamente, el sistema:
+  - Lo registra automáticamente en la colección `clients` con sus datos disponibles al pasar a desarrollo.
+  - Asigna el nombre ingresado como fallback inmediato, erradicando etiquetas como "Desconocido".
+  - Sincroniza bidireccionalmente en tiempo real `clientId`, `taxId`, `phone` y `email` en la propuesta, el proyecto y el CRM.
+
 ### 3.5 Propuestas Comerciales, Presupuestos y Presets
 - **Rutas:** `/dashboard/propuestas`, `/dashboard/propuestas/nueva`, `/dashboard/propuestas/:id`, `/dashboard/propuestas/:id/editar`
 - **Servicios:** `PropuestasService`.
@@ -114,11 +125,13 @@ Las dos aplicaciones comparten las siguientes colecciones principales:
 ### 3.7 Tablero Kanban de Proyectos & Ciclo de Desarrollo
 - **Ruta:** `/dashboard/proyectos`
 - **Servicios:** `ProyectosService`.
-- **Vistas:** Alternancia entre vista **Kanban visual** (columnas: Pendiente, En Progreso, Testing, Entregado) y **Tabla detallada**.
+- **Vistas:** Alternancia entre vista **Kanban visual** (columnas: Esperando Anticipo, En Desarrollo, QA/Testing, Entregado) y **Tabla detallada**.
+- **Control de Anticipo Obligatorio:** El proyecto entra primero en `Esperando Anticipo 50%` hasta registrar el cobro inicial para proteger el flujo de caja.
+- **Cronómetro / SLA de Entrega en Vivo:** Cada tarjeta calcula automáticamente los días transcurridos contra el plazo contractual pactado en la cotización (*"Día X de Yd (Z%)"*), cambiando a advertencia visual en los últimos 3 días.
 - **Acciones directas:**
   - Arrastrar o avanzar fases en tiempo real con actualización optimista inmediata (0ms).
   - Al marcar como "Entregado", genera automáticamente el enlace de satisfacción (`reviewToken`) y lo copia al portapapeles.
-  - Menú de documentos legales asociados al proyecto.
+  - Menú de documentos legales asociados al proyecto y botón para **Archivar en Histórico** una vez finalizado y con saldo cancelado ($0).
 
 ### 3.8 Bóveda Segura de Infraestructura (Cifrado AES-256-GCM)
 - **Componente:** `BovedaDialogComponent` ([boveda-dialog.component.ts](file:///d:/Programacion/Github%20WolTeI/WolfTeI-autogestion/src/app/views/dashboard/proyectos/boveda-dialog/boveda-dialog.component.ts)).
@@ -145,6 +158,17 @@ El sistema cuenta con un motor nativo en cliente sin intermediarios que produce 
   - **Tabla de Cuentas por Cobrar:** Listado dinámico de contratos aprobados o en curso que adeudan anticipo o saldo final, con porcentaje de avance y botón para registrar cobranza en 1 clic.
   - **Libro Diario de Cobranzas:** Tabla de cobros realizados con concepto (Anticipo, Saldo, Cuota, Total), medio de pago (Transferencia, USDT, Efectivo, Mercado Pago) y monto.
   - **Generación de Recibo Oficial en PDF ([receipt-pdf-generator.ts](file:///d:/Programacion/Github%20WolTeI/WolfTeI-autogestion/src/app/utils/receipt-pdf-generator.ts)):** Descarga instantánea de comprobante de pago foliado (`REC-AAMMDD-XXX`) con membrete de WolfTeI, datos fiscales y firma oficial de Carlos Alberto Prost.
+
+### 3.11 Histórico Central & Expedientes Auditados
+- **Ruta:** `/dashboard/historico`
+- **Componentes:** `HistoricoComponent`, `ExpedienteDialogComponent`.
+- **Funcionamiento:**
+  - Archivo permanente de proyectos completados y cerrados. Mantiene limpio el tablero diario de Kanban.
+  - **Línea de Tiempo (Timeline Visual):** Al abrir cualquier expediente, despliega la cronología exacta: emisión, vista con IP del firmante, anticipo cobrado, desarrollo, entrega con garantía, saldo cobrado y reseña recibida.
+  - **Dossier de Cierre VIP (PDFs):** Botón para descargar el paquete documental completo con Contrato, Acta de Garantía y Recibos oficiales foliados.
+  - **Upselling Automático de Mantenimiento:** Detecta cuando vencieron los 30 días de garantía técnica y ofrece un botón de WhatsApp a 1 clic para ofrecer el plan de abono mensual recurrente al cliente.
+
+### 3.12 Moderador de Reseñas y Testimonios Web
   - Exportación del libro de cobranzas a CSV/Excel.
 
 ### 3.11 Moderador de Reseñas y Testimonios Web

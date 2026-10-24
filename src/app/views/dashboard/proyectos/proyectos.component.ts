@@ -4,8 +4,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ProyectosService, Proyecto } from '../../../service/proyectos.service';
+import { PropuestasService } from '../../../service/propuestas.service';
 import { ClientesService, Cliente } from '../../../service/clientes.service';
 import { WhatsAppService } from '../../../service/whatsapp.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -17,10 +18,11 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { forkJoin, of, Subscription } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../../../utils/contract-pdf-generator';
 import { generateActaGarantiaPDF } from '../../../utils/acta-garantia-pdf-generator';
 import { BovedaCredencialesDialogComponent } from './boveda-dialog/boveda-dialog.component';
+import { EditarClienteDialogComponent, EditarClienteDialogData } from '../clientes/editar-cliente-dialog/editar-cliente-dialog.component';
 
 export interface ProyectoView extends Proyecto {
   clientName?: string;
@@ -29,10 +31,10 @@ export interface ProyectoView extends Proyecto {
 }
 
 export const KANBAN_COLUMNS = [
-  { id: 'pendiente',   label: 'Por Iniciar',   icon: 'hourglass_empty', color: '#f59e0b' },
-  { id: 'en_progreso', label: 'En Desarrollo', icon: 'engineering',     color: '#3b82f6' },
-  { id: 'testing',     label: 'QA / Testing',  icon: 'rule',            color: '#8b5cf6' },
-  { id: 'entregado',   label: 'Entregado',     icon: 'task_alt',        color: '#10b981' }
+  { id: 'esperando_anticipo', label: 'Esperando Anticipo', icon: 'pending_actions', color: '#f59e0b' },
+  { id: 'en_progreso',        label: 'En Desarrollo',      icon: 'engineering',     color: '#3b82f6' },
+  { id: 'testing',            label: 'QA / Testing',       icon: 'rule',            color: '#8b5cf6' },
+  { id: 'entregado',          label: 'Entregado',          icon: 'task_alt',        color: '#10b981' }
 ];
 
 @Component({
@@ -59,8 +61,10 @@ export const KANBAN_COLUMNS = [
 })
 export class ProyectosComponent implements OnInit, OnDestroy {
   private proyectosService = inject(ProyectosService);
+  private propuestasService = inject(PropuestasService);
   private clientesService = inject(ClientesService);
   private whatsAppService = inject(WhatsAppService);
+  private router = inject(Router);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private sub?: Subscription;
@@ -72,11 +76,28 @@ export class ProyectosComponent implements OnInit, OnDestroy {
   displayedColumns: string[] = ['title', 'client', 'phase', 'status', 'actions'];
 
   ngOnInit(): void {
+    this.sincronizarPropuestasAprobadas();
     this.iniciarEscuchaTiempoReal();
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+  }
+
+  /**
+   * Revisa si hay propuestas en estado 'en_desarrollo' o 'aceptado' que aún no tengan
+   * su proyecto correspondiente en el Tablero Kanban y las da de alta automáticamente.
+   */
+  sincronizarPropuestasAprobadas() {
+    this.propuestasService.listenPropuestas().pipe(take(1)).subscribe({
+      next: (props) => {
+        const enDesarrollo = props.filter(p => p.status === 'en_desarrollo' || p.status === 'aceptado');
+        for (const prop of enDesarrollo) {
+          this.proyectosService.crearOObtenerDesdePropuesta(prop).subscribe();
+        }
+      },
+      error: (err) => console.warn('Error al verificar propuestas para sincronizar con Kanban:', err)
+    });
   }
 
   iniciarEscuchaTiempoReal() {
@@ -91,15 +112,26 @@ export class ProyectosComponent implements OnInit, OnDestroy {
 
         // Mapear IDs de clientes a sus nombres, teléfonos y datos completos
         const clientRequests = proyectosData.map(p => {
-          if (!p.clientId) return of({...p, clientName: 'Desconocido'} as ProyectoView);
+          const fallbackNombre = (!p.clientName || p.clientName === 'Desconocido') ? 'Cliente' : p.clientName;
+          if (!p.clientId) {
+            return of({
+              ...p,
+              clientName: fallbackNombre,
+              clientPhone: p.clientPhone,
+            } as ProyectoView);
+          }
           return this.clientesService.getCliente(p.clientId).pipe(
             map(cliente => ({
               ...p,
-              clientName: cliente.name,
-              clientPhone: cliente.phone,
+              clientName: cliente.name || fallbackNombre,
+              clientPhone: cliente.phone || p.clientPhone,
               cliente: cliente
             }) as ProyectoView),
-            catchError(() => of({...p, clientName: 'Desconocido'} as ProyectoView))
+            catchError(() => of({
+              ...p,
+              clientName: fallbackNombre,
+              clientPhone: p.clientPhone,
+            } as ProyectoView))
           );
         });
 
@@ -122,8 +154,87 @@ export class ProyectosComponent implements OnInit, OnDestroy {
 
   proyectosPorEstado(estadoId: string): ProyectoView[] {
     return this.proyectos().filter(p => {
-      if (estadoId === 'testing') return p.status === ('testing' as any);
+      // Excluir proyectos archivados del tablero operativo (se visualizan en la sección Histórico)
+      if (p.status === 'archivado') return false;
+
+      if (estadoId === 'esperando_anticipo') {
+        return p.status === 'esperando_anticipo' || (p.status as string) === 'pendiente';
+      }
+      if (estadoId === 'testing') {
+        return p.status === ('testing' as any);
+      }
       return p.status === estadoId;
+    });
+  }
+
+  /**
+   * Calcula el avance temporal y estado SLA según el plazo pactado en la propuesta.
+   */
+  calcularSla(p: ProyectoView): { diasTranscurridos: number; diasTotales: number; porcentaje: number; esAlerta: boolean } {
+    const diasTotales = p.deliveryDays || 20;
+    const fechaInicio = p.startDate ? new Date(p.startDate).getTime() : Date.now();
+    const diasTranscurridos = Math.max(1, Math.floor((Date.now() - fechaInicio) / (1000 * 60 * 60 * 24)));
+    const porcentaje = Math.min(100, Math.round((diasTranscurridos / diasTotales) * 100));
+    const diasRestantes = diasTotales - diasTranscurridos;
+    const esAlerta = diasRestantes <= 3 && p.status !== 'entregado' && p.status !== 'archivado';
+
+    return { diasTranscurridos, diasTotales, porcentaje, esAlerta };
+  }
+
+  /**
+   * Archiva un proyecto completado o cancelado y lo deriva a la sección Histórico.
+   */
+  archivarProyecto(proyecto: ProyectoView): void {
+    if (!proyecto.id) return;
+    const ok = confirm(`¿Deseás archivar el expediente de "${proyecto.title}" y derivarlo a la sección Histórico?`);
+    if (!ok) return;
+
+    this.proyectosService.archivarProyecto(proyecto.id).subscribe({
+      next: () => {
+        this.snackBar.open(`📦 Proyecto archivado en el Histórico de WolfTeI.`, 'Ver Histórico', { duration: 4000 })
+          .onAction().subscribe(() => this.router.navigate(['/dashboard/historico']));
+      },
+      error: (err) => {
+        console.error(err);
+        this.snackBar.open('Error al archivar el proyecto.', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
+  /**
+   * Abre el modal para completar o editar los datos de contacto y fiscales del cliente
+   * desde la misma tarjeta o tabla del proyecto.
+   */
+  abrirEditarCliente(proyecto: ProyectoView): void {
+    const nombreSugerido = (!proyecto.clientName || proyecto.clientName === 'Desconocido' || proyecto.clientName === 'Cliente')
+      ? ''
+      : proyecto.clientName;
+
+    const dialogRef = this.dialog.open(EditarClienteDialogComponent, {
+      width: '580px',
+      data: {
+        cliente: proyecto.cliente,
+        nombreSugerido,
+        emailSugerido: proyecto.clientEmail,
+        telefonoSugerido: proyecto.clientPhone,
+        cuitSugerido: proyecto.clientTaxId,
+        proyectoId: proyecto.id,
+        propuestaId: proyecto.propuestaId,
+      } as EditarClienteDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((res: any) => {
+      if (res) {
+        this.proyectos.update(lista =>
+          lista.map(p => p.id === proyecto.id ? {
+            ...p,
+            clientId: res.id || p.clientId,
+            clientName: res.name || p.clientName,
+            clientPhone: res.phone || p.clientPhone,
+            cliente: res,
+          } : p)
+        );
+      }
     });
   }
 

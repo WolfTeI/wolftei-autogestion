@@ -18,7 +18,9 @@ import { ClientesService, Cliente } from '../../../../service/clientes.service';
 import { CurrencyService } from '../../../../service/currency.service';
 import { PagosService, Pago } from '../../../../service/pagos.service';
 import { WhatsAppService } from '../../../../service/whatsapp.service';
+import { ProyectosService } from '../../../../service/proyectos.service';
 import { RegistrarPagoDialogComponent } from './registrar-pago-dialog/registrar-pago-dialog.component';
+import { EditarClienteDialogComponent } from '../../clientes/editar-cliente-dialog/editar-cliente-dialog.component';
 import { generateReceiptPDF } from '../../../../utils/receipt-pdf-generator';
 import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../../../../utils/contract-pdf-generator';
 import { obtenerFirmaActiva } from '../../../../utils/firma-oficial';
@@ -63,6 +65,7 @@ export class DetallePropuestaComponent implements OnInit {
   private pagosService = inject(PagosService);
   private clientesService = inject(ClientesService);
   private whatsAppService = inject(WhatsAppService);
+  private proyectosService = inject(ProyectosService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
@@ -112,17 +115,50 @@ export class DetallePropuestaComponent implements OnInit {
     });
   }
 
+  abrirEditarCliente() {
+    const p = this.propuesta();
+    const cli = this.cliente();
+
+    const dialogRef = this.dialog.open(EditarClienteDialogComponent, {
+      width: '640px',
+      data: {
+        cliente: cli || undefined,
+        nombreSugerido: cli?.name || p?.clientPreviewName || p?.clientLegalName || '',
+        emailSugerido: cli?.email || p?.clientPreviewEmail || p?.clientEmail || '',
+        cuitSugerido: cli?.taxId || p?.clientTaxId || '',
+        propuestaId: p?.id || undefined,
+        proyectoId: p?.proyectoId || undefined,
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((res: Cliente | null) => {
+      if (res) {
+        this.cliente.set(res);
+        this.propuesta.update(curr => {
+          if (!curr) return null;
+          return {
+            ...curr,
+            clientId: res.id,
+            clientPreviewName: res.name,
+            clientPreviewEmail: res.email,
+            clientTaxId: res.taxId,
+          };
+        });
+      }
+    });
+  }
+
   private getClienteObj(): Cliente {
     if (this.cliente()) return this.cliente()!;
     const p = this.propuesta();
     return {
       id: p?.clientId || '',
-      name: p?.clientPreviewName || 'Cliente',
-      email: p?.clientPreviewEmail || '',
+      name: p?.clientPreviewName || p?.clientLegalName || 'Cliente',
+      email: p?.clientPreviewEmail || p?.clientEmail || '',
       company: '',
       phone: '',
-      address: '',
-      taxId: ''
+      address: p?.clientAddress || '',
+      taxId: p?.clientTaxId || ''
     };
   }
 
@@ -265,7 +301,29 @@ export class DetallePropuestaComponent implements OnInit {
     this.propuestasService.cambiarEstado(p.id, nuevoEstado).subscribe({
       next: () => {
         this.propuesta.update(prev => prev ? { ...prev, status: nuevoEstado } : prev);
-        this.snackBar.open(`Estado → "${this.getStatusLabel(nuevoEstado)}"`, '', { duration: 2500 });
+
+        // Si se pasa a desarrollo o se acepta, crear/asegurar automáticamente el proyecto en el Kanban
+        if (nuevoEstado === 'en_desarrollo' || nuevoEstado === 'aceptado') {
+          this.proyectosService.crearOObtenerDesdePropuesta(p).subscribe({
+            next: (res) => {
+              this.propuesta.update(prev => prev ? { ...prev, proyectoId: res.proyecto.id } : prev);
+              const snack = this.snackBar.open(
+                `🚀 Estado → "${this.getStatusLabel(nuevoEstado)}" y Proyecto activo en Kanban.`,
+                'Ver en Proyectos',
+                { duration: 5000 }
+              );
+              snack.onAction().subscribe(() => {
+                this.router.navigate(['/dashboard/proyectos']);
+              });
+            },
+            error: (err) => {
+              console.error('Error al sincronizar proyecto en Kanban:', err);
+              this.snackBar.open(`Estado → "${this.getStatusLabel(nuevoEstado)}"`, '', { duration: 2500 });
+            }
+          });
+        } else {
+          this.snackBar.open(`Estado → "${this.getStatusLabel(nuevoEstado)}"`, '', { duration: 2500 });
+        }
       },
       error: () => this.snackBar.open('Error al cambiar estado.', 'Cerrar', { duration: 3000 }),
     });
