@@ -56,8 +56,8 @@ export interface TimelineHito {
             <mat-icon>business</mat-icon>
             {{ data.cliente?.name || data.proyecto.clientName || 'Cliente' }} — {{ data.cliente?.company || 'Particular' }}
             <span class="cuit-badge" *ngIf="data.cliente?.taxId || data.proyecto.clientTaxId">CUIT/DNI: {{ data.cliente?.taxId || data.proyecto.clientTaxId }}</span>
-            <button mat-icon-button (click)="abrirEditarCliente()" matTooltip="Editar o completar datos del cliente" style="width: 24px; height: 24px; line-height: 24px;">
-              <mat-icon style="font-size: 15px; width: 15px; height: 15px; color: #60a5fa;">edit</mat-icon>
+            <button mat-icon-button (click)="abrirEditarCliente()" matTooltip="Editar o completar datos del cliente" class="btn-inline-edit">
+              <mat-icon>edit</mat-icon>
             </button>
           </p>
         </div>

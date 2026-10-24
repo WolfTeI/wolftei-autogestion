@@ -58,8 +58,8 @@
             <div class="cliente-cell" style="position: relative;">
               <div style="display: flex; align-items: center; gap: 4px;">
                 <span class="cliente-name">{{ p.clientPreviewName || 'Cliente' }}</span>
-                <button mat-icon-button (click)="abrirEditarCliente(p); $event.stopPropagation()" matTooltip="Editar / Completar datos del cliente" style="width: 24px; height: 24px; line-height: 24px;">
-                  <mat-icon style="font-size: 15px; width: 15px; height: 15px; color: #60a5fa;">edit</mat-icon>
+                <button mat-icon-button (click)="abrirEditarCliente(p); $event.stopPropagation()" matTooltip="Editar / Completar datos del cliente" class="btn-inline-edit">
+                  <mat-icon>edit</mat-icon>
                 </button>
               </div>
               <span class="proyecto-name">{{ p.title }}</span>

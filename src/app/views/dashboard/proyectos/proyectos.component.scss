@@ -200,13 +200,42 @@
     }
 
     .btn-edit-client {
-      width: 22px;
-      height: 22px;
-      line-height: 22px;
-      margin-left: 2px;
-      opacity: 0.5;
-      &:hover { opacity: 1; color: #60a5fa; }
-      mat-icon { font-size: 14px; width: 14px; height: 14px; }
+      width: 24px !important;
+      height: 24px !important;
+      min-width: 24px !important;
+      min-height: 24px !important;
+      padding: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 50% !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: none !important;
+      cursor: pointer !important;
+      margin-left: 4px;
+      color: #94a3b8;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(96, 165, 250, 0.2) !important;
+        color: #60a5fa !important;
+      }
+
+      mat-icon {
+        font-size: 13px !important;
+        width: 13px !important;
+        height: 13px !important;
+        line-height: 13px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .mat-mdc-button-touch-target {
+        display: none !important;
+      }
     }
   }
 

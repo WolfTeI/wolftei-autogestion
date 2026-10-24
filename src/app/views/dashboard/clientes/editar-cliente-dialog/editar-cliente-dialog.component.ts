@@ -52,7 +52,7 @@ export interface EditarClienteDialogData {
       <form [formGroup]="form" (ngSubmit)="guardar()" class="cliente-form">
         <div class="form-row">
           <mat-form-field appearance="outline" class="col-6">
-            <mat-label>Nombre y Apellido / Razón Social *</mat-label>
+            <mat-label>Nombre y Apellido / Razón Social</mat-label>
             <input matInput formControlName="name" placeholder="Ej: Juan Pérez o Tech Solutions SRL" />
             <mat-error *ngIf="form.get('name')?.hasError('required')">El nombre es obligatorio</mat-error>
           </mat-form-field>
@@ -77,7 +77,7 @@ export interface EditarClienteDialogData {
 
         <div class="form-row">
           <mat-form-field appearance="outline" class="col-6">
-            <mat-label>Correo Electrónico *</mat-label>
+            <mat-label>Correo Electrónico</mat-label>
             <input matInput formControlName="email" type="email" placeholder="cliente@empresa.com" />
             <mat-error *ngIf="form.get('email')?.hasError('required')">El correo es obligatorio</mat-error>
             <mat-error *ngIf="form.get('email')?.hasError('email')">Formato de correo no válido</mat-error>
