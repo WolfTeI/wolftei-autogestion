@@ -1,9 +1,9 @@
-name: 'Release & Build Tauri App'
+name: "Release & Build Tauri App"
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
@@ -13,8 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'windows-latest'
-            args: ''
+          - platform: "windows-latest"
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -35,7 +35,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
 
       - name: Setup Environment Files
         shell: bash
@@ -59,12 +59,12 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'WolfTeI Autogestión ${{ github.ref_name }}'
+          releaseName: "WolfTeI Autogestión ${{ github.ref_name }}"
           releaseBody: |
             ## 🐺 WolfTeI Autogestión ${{ github.ref_name }}
-            
+
             Compilación automatizada por GitHub Actions con instaladores nativos para Windows (.msi y .exe) y artefactos de actualización automática.
-            
+
             ### ✨ Novedades de esta versión:
             - **Flujo en 3 Etapas:** Presupuestos (comercial) -> Proyectos (operativa & cobranzas) -> Histórico (expedientes cerrados y auditados).
             - **Cronómetro SLA en Vivo:** Control de plazos pactados en contrato y advertencia preventiva de entrega.

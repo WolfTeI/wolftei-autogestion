@@ -50,20 +50,11 @@ export interface EditarClienteDialogData {
     <div class="cliente-dialog-container">
       <div class="dialog-header">
         <div class="header-icon">
-          <mat-icon>{{ data?.cliente?.id ? "edit" : "person_add" }}</mat-icon>
+          <mat-icon>{{ esEdicion ? "edit" : "person_add" }}</mat-icon>
         </div>
         <div>
-          <h2>
-            {{
-              data?.cliente?.id
-                ? "Editar Datos del Cliente"
-                : "Completar / Dar de Alta Cliente"
-            }}
-          </h2>
-          <p class="subtitle">
-            Datos fiscales, comerciales y de contacto para contratos,
-            facturación y WhatsApp.
-          </p>
+          <h2>{{ esEdicion ? "Editar Datos del Cliente" : "Completar / Dar de Alta Cliente" }}</h2>
+          <p class="subtitle">Datos fiscales, comerciales y de contacto para contratos, facturación y WhatsApp.</p>
         </div>
       </div>
 
@@ -168,9 +159,7 @@ export interface EditarClienteDialogData {
               *ngIf="guardando"
               style="display: inline-block; margin-right: 6px;"
             ></mat-spinner>
-            <span>{{
-              data?.cliente?.id ? "Guardar Cambios" : "Registrar y Vincular"
-            }}</span>
+            <span>{{ esEdicion ? "Guardar Cambios" : "Registrar y Vincular" }}</span>
           </button>
         </div>
       </form>
@@ -255,6 +244,10 @@ export class EditarClienteDialogComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
 
   guardando = false;
+
+  get esEdicion(): boolean {
+    return !!this.data?.cliente?.id;
+  }
 
   form: FormGroup = this.fb.group({
     name: ["", [Validators.required, Validators.minLength(2)]],
