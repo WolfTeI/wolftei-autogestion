@@ -13,7 +13,7 @@ import { ActualizacionDialogComponent } from '../views/dashboard/actualizacion-d
 export class UpdaterService {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
-  public readonly currentVersion = '0.3.0';
+  public readonly currentVersion = '0.3.1';
 
   /**
    * Consulta el endpoint de GitHub Releases para ver si hay una versión superior a la actual.

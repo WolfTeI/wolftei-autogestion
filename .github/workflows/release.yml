@@ -40,10 +40,12 @@ jobs:
 
       - name: Setup Environment Files
         shell: bash
+        env:
+          ENV_PROD_CONTENT: ${{ secrets.ENVIRONMENT_PROD_TS }}
         run: |
-          if [ -n "${{ secrets.ENVIRONMENT_PROD_TS }}" ]; then
-            echo "${{ secrets.ENVIRONMENT_PROD_TS }}" > src/environments/environment.prod.ts
-            echo "${{ secrets.ENVIRONMENT_PROD_TS }}" > src/environments/environment.ts
+          if [ -n "$ENV_PROD_CONTENT" ]; then
+            printf '%s\n' "$ENV_PROD_CONTENT" > src/environments/environment.prod.ts
+            printf '%s\n' "$ENV_PROD_CONTENT" > src/environments/environment.ts
           else
             cp src/environments/environment.example.ts src/environments/environment.ts
             cp src/environments/environment.example.ts src/environments/environment.prod.ts
