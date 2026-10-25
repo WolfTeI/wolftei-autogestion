@@ -1,0 +1,78 @@
+name: 'Release & Build Tauri App'
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest'
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup Environment Files
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.ENVIRONMENT_PROD_TS }}" ]; then
+            echo "${{ secrets.ENVIRONMENT_PROD_TS }}" > src/environments/environment.prod.ts
+            echo "${{ secrets.ENVIRONMENT_PROD_TS }}" > src/environments/environment.ts
+          else
+            cp src/environments/environment.example.ts src/environments/environment.ts
+            cp src/environments/environment.example.ts src/environments/environment.prod.ts
+          fi
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build Tauri App & Publish Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'WolfTeI Autogestión ${{ github.ref_name }}'
+          releaseBody: |
+            ## 🐺 WolfTeI Autogestión ${{ github.ref_name }}
+            
+            Compilación automatizada por GitHub Actions con instaladores nativos para Windows (.msi y .exe) y artefactos de actualización automática.
+            
+            ### ✨ Novedades de esta versión:
+            - **Flujo en 3 Etapas:** Presupuestos (comercial) -> Proyectos (operativa & cobranzas) -> Histórico (expedientes cerrados y auditados).
+            - **Cronómetro SLA en Vivo:** Control de plazos pactados en contrato y advertencia preventiva de entrega.
+            - **Semáforo de Anticipo 50%:** Control de flujo de caja previo a desarrollo.
+            - **Edición Universal de Clientes:** Carga y corrección de datos fiscales (CUIT, teléfono, dirección, empresa) desde cualquier etapa sin clientes "Desconocidos".
+            - **Bóveda AES-256-GCM:** Gestión segura de credenciales e infraestructura cifrada en cliente.
+            - **Finanzas & Recibos Foliados:** Libro diario de cobranzas y recibos oficiales PDF con firma gráfica.
+            - **Expediente Digital con Timeline:** Trazabilidad 100% de contratos, lecturas con IP y upsell de mantenimiento a los 30 días.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
