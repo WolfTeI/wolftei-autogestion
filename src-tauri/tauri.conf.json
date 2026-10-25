@@ -43,7 +43,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUwMjU1MTBBQzQ1NDc4RjEKUldUeGVGVEVDbEVsNEhHOHgzK0t3U2VWV2pVaWs0dDJIY3R1ZmcvMmRPdGpOMVZwbmZ5ZjVZdEsK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg5QjJFNkUyRTNFOTM3OTIKUldTU04rbmo0dWF5aWYybjBPbmhWU1BXeGVnd3d6M09UZHV5UFJGSi82MFlzMlBKejBHekZtRlUK",
       "endpoints": [
         "https://github.com/WolfTeI/wolftei-autogestion/releases/latest/download/latest.json"
       ]
