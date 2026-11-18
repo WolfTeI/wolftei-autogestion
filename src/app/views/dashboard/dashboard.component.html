@@ -27,11 +27,20 @@
 
       <a
         mat-list-item
+        routerLink="/dashboard/informes"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>assignment</mat-icon>
+        <span matListItemTitle>Informes Técnicos</span>
+      </a>
+
+      <a
+        mat-list-item
         routerLink="/dashboard/propuestas"
         routerLinkActive="active"
       >
-        <mat-icon matListItemIcon>description</mat-icon>
-        <span matListItemTitle>Propuestas</span>
+        <mat-icon matListItemIcon>request_quote</mat-icon>
+        <span matListItemTitle>Presupuestos</span>
       </a>
 
       <a

@@ -1,0 +1,154 @@
+.informes-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 4px 0;
+    font-size: 26px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 14px;
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 60px 0;
+  color: #94a3b8;
+
+  mat-spinner {
+    margin: 0 auto 16px auto;
+  }
+}
+
+.empty-card {
+  text-align: center;
+  padding: 48px 24px;
+
+  .empty-icon {
+    font-size: 56px;
+    width: 56px;
+    height: 56px;
+    color: #64748b;
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  p {
+    max-width: 500px;
+    margin: 0 auto 24px auto;
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+.table-card {
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.informes-table {
+  width: 100%;
+
+  .title-cell {
+    max-width: 320px;
+  }
+
+  .informe-link {
+    color: #60a5fa;
+    text-decoration: none;
+    font-size: 14px;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .client-info {
+    display: flex;
+    flex-direction: column;
+
+    .client-name {
+      font-weight: 500;
+      color: #f1f5f9;
+    }
+
+    .client-company {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+  }
+
+  .status-badge {
+    border-radius: 20px;
+    padding: 0 12px;
+    height: 32px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .arrow-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      margin-left: 2px;
+    }
+  }
+
+  .actions-header {
+    text-align: right;
+  }
+
+  .actions-cell {
+    text-align: right;
+    white-space: nowrap;
+
+    .budget-action-btn {
+      margin: 0 4px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+  }
+
+  .table-row {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+  }
+}
+
+.block {
+  display: block;
+}
+
+.text-muted {
+  color: #94a3b8;
+}

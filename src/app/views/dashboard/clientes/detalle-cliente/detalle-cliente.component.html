@@ -5,7 +5,7 @@
     </button>
     <h1>Perfil del Cliente</h1>
     <span class="spacer"></span>
-    @if (cliente?.phone) {
+    @if (cliente()?.phone) {
       <button mat-stroked-button (click)="contactarWhatsApp()" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4); margin-right: 8px;">
         <mat-icon style="color: #10b981;">chat</mat-icon>
         WhatsApp
@@ -31,44 +31,51 @@
         <span>Descargar Ambos Instrumentos</span>
       </button>
     </mat-menu>
-    <button mat-flat-button color="accent" disabled>
+    <button mat-flat-button color="accent" (click)="abrirEditarClienteDialog()">
       <mat-icon>edit</mat-icon>
-      Editar
+      Editar Datos
     </button>
   </div>
 
-  @if (isLoading) {
+  @if (isLoading()) {
     <div class="loading-shade">
-      <mat-spinner></mat-spinner>
+      <mat-spinner diameter="48"></mat-spinner>
     </div>
-  } @else if (cliente) {
+  } @else if (cliente(); as cli) {
     <div class="dashboard-grid">
       
       <!-- Ficha del Cliente -->
       <mat-card class="client-card">
         <mat-card-header>
           <div mat-card-avatar class="client-avatar">
-            <mat-icon>business</mat-icon>
+            @if (cli.logoUrl) {
+              <img [src]="cli.logoUrl" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />
+            } @else {
+              <mat-icon>business</mat-icon>
+            }
           </div>
-          <mat-card-title>{{ cliente.name }}</mat-card-title>
-          <mat-card-subtitle>{{ cliente.company || 'Particular' }}</mat-card-subtitle>
+          <mat-card-title>{{ cli.name }}</mat-card-title>
+          <mat-card-subtitle>{{ cli.company || 'Particular' }}</mat-card-subtitle>
         </mat-card-header>
         
         <mat-divider></mat-divider>
         
         <mat-card-content class="client-details">
-          <p><mat-icon>email</mat-icon> {{ cliente.email }}</p>
-          <p><mat-icon>phone</mat-icon> {{ cliente.phone || 'No registrado' }}</p>
-          <p><mat-icon>location_on</mat-icon> {{ cliente.address || 'No registrado' }}</p>
-          <p><mat-icon>receipt</mat-icon> CUIT/RUT: {{ cliente.taxId || 'No registrado' }}</p>
+          <p><mat-icon>email</mat-icon> {{ cli.email }}</p>
+          <p><mat-icon>phone</mat-icon> {{ cli.phone || 'No registrado' }}</p>
+          <p><mat-icon>location_on</mat-icon> {{ cli.address || 'No registrado' }}</p>
+          <p><mat-icon>receipt</mat-icon> CUIT/RUT/DNI: {{ cli.taxId || 'No registrado' }}</p>
+          @if (cli.notes) {
+            <p><mat-icon>notes</mat-icon> {{ cli.notes }}</p>
+          }
 
           <div class="reputation-box">
-            <h3>Reputación</h3>
-            @if (cliente.reviewsCount && cliente.reviewsCount > 0) {
+            <h3>Reputación & Reseñas</h3>
+            @if (cli.reviewsCount && cli.reviewsCount > 0) {
               <div class="score">
                 <mat-icon color="accent">star</mat-icon>
-                <span class="number">{{ cliente.reputationScore | number:'1.1-1' }}</span>
-                <span class="count">({{ cliente.reviewsCount }} reseñas)</span>
+                <span class="number">{{ cli.reputationScore | number:'1.1-1' }}</span>
+                <span class="count">({{ cli.reviewsCount }} reseñas)</span>
               </div>
             } @else {
               <p class="text-muted">Aún no hay reseñas registradas para este cliente.</p>
@@ -77,36 +84,89 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- Historial de Proyectos -->
-      <mat-card class="projects-card">
-        <mat-card-header>
-          <mat-card-title>Historial de Proyectos</mat-card-title>
-        </mat-card-header>
-        
-        <mat-divider></mat-divider>
-        
-        <mat-card-content>
-          @if (proyectos.length === 0) {
-            <p class="text-muted empty-projects">No hay proyectos asociados a este cliente.</p>
-          } @else {
-            <mat-list>
-              @for (proyecto of proyectos; track proyecto.id) {
-                <mat-list-item>
-                  <mat-icon matListItemIcon>folder</mat-icon>
-                  <div matListItemTitle>{{ proyecto.title }}</div>
-                  <div matListItemLine>Fase actual: {{ proyecto.currentPhase }}</div>
-                  <div matListItemMeta>
-                    <mat-chip [color]="getStatusColor(proyecto.status)" selected>
-                      {{ proyecto.status | uppercase }}
-                    </mat-chip>
-                  </div>
-                </mat-list-item>
-              }
-            </mat-list>
-          }
-        </mat-card-content>
-      </mat-card>
+      <!-- Panel Derecho: Proyectos y Cotizaciones asociadas -->
+      <div class="client-activity-column">
+        <!-- Historial de Proyectos -->
+        <mat-card class="projects-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar style="color: #3b82f6;">folder_special</mat-icon>
+            <mat-card-title>Proyectos & Soluciones Desarrolladas</mat-card-title>
+            <mat-card-subtitle>Desarrollos, versiones y módulos asignados a {{ cli.name }}</mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-divider></mat-divider>
+          
+          <mat-card-content>
+            @if (proyectos().length === 0) {
+              <p class="text-muted empty-projects">No hay proyectos activos o entregados asociados a este cliente.</p>
+            } @else {
+              <mat-list>
+                @for (proyecto of proyectos(); track proyecto.id) {
+                  <mat-list-item>
+                    <mat-icon matListItemIcon>folder</mat-icon>
+                    <div matListItemTitle>
+                      <strong>{{ proyecto.title }}</strong>
+                      @if (proyecto.versionTag) {
+                        <span class="version-badge"> {{ proyecto.versionTag }}</span>
+                      }
+                    </div>
+                    <div matListItemLine>Fase actual: {{ proyecto.currentPhase }} · Monto: {{ proyecto.totalAmount }} {{ proyecto.currency }}</div>
+                    <div matListItemMeta>
+                      <mat-chip [color]="getStatusColor(proyecto.status)" selected>
+                        {{ proyecto.status | uppercase }}
+                      </mat-chip>
+                    </div>
+                  </mat-list-item>
+                }
+              </mat-list>
+            }
+          </mat-card-content>
+        </mat-card>
 
+        <!-- Presupuestos / Cotizaciones -->
+        <mat-card class="projects-card" style="margin-top: 20px;">
+          <mat-card-header>
+            <mat-icon mat-card-avatar style="color: #f59e0b;">request_quote</mat-icon>
+            <mat-card-title>Presupuestos & Cotizaciones</mat-card-title>
+            <mat-card-subtitle>Propuestas comerciales emitidas para este cliente</mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-divider></mat-divider>
+          
+          <mat-card-content>
+            @if (propuestas().length === 0) {
+              <p class="text-muted empty-projects">No hay presupuestos registrados para este cliente.</p>
+            } @else {
+              <mat-list>
+                @for (prop of propuestas(); track prop.id) {
+                  <mat-list-item>
+                    <mat-icon matListItemIcon>description</mat-icon>
+                    <div matListItemTitle>
+                      <a [routerLink]="['/dashboard/propuestas', prop.id]" style="color: #60a5fa; text-decoration: none;">
+                        {{ prop.title }}
+                      </a>
+                    </div>
+                    <div matListItemLine>{{ prop.totalAmount }} {{ prop.currency }} · Validez: {{ prop.validDays || 15 }} días</div>
+                    <div matListItemMeta>
+                      <mat-chip selected>
+                        {{ prop.status | uppercase }}
+                      </mat-chip>
+                    </div>
+                  </mat-list-item>
+                }
+              </mat-list>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+    </div>
+  } @else {
+    <div class="empty-state" style="text-align: center; padding: 48px;">
+      <mat-icon style="font-size: 48px; width: 48px; height: 48px; color: #94a3b8;">person_off</mat-icon>
+      <h2>Cliente no encontrado</h2>
+      <p class="text-muted">El cliente solicitado no existe o fue eliminado.</p>
+      <button mat-stroked-button color="primary" routerLink="/dashboard/clientes">Volver al Directorio</button>
     </div>
   }
 </div>

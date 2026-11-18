@@ -27,6 +27,8 @@ Con la migración directa a Firebase, el control de acceso se rige por las polí
 | `/projects/{id}` | **Privado** / Mixto | Lectura privada o mediante token de encuesta (`reviewToken`) | `ProyectosService` |
 | `/payments/{id}` | **Privado** | Requiere sesión activa (`request.auth != null`) | `PagosService` |
 | `/proposals/{id}` | **Privado** / Mixto | Creación/Edición requiere `request.auth != null`. Lectura pública por `token`. Aceptación legal de clientes restringida a campos de firma. | `PropuestasService` |
+| `/technical_proposals/{id}` | **Privado** / Mixto | Creación/Edición/Eliminación requiere `request.auth != null`. Lectura pública restringida por `token` seguro CSPRNG (`inf-XXXXXX`). | `InformesTecnicosService` |
+| `/showcase/{id}` | **Público (Lectura)** / **Privado (Escritura)** | Lectura pública abierta (`allow read: if true;`) para logos y reseñas aprobadas sin datos PII; sincronización y escritura exclusiva para operadores (`request.auth != null`). | `ProyectosService` / `ShowcaseService` |
 | `/contacto/{id}` | **Público (Escritura)** / **Privado (Lectura)** | Creación abierta con validación de tipo de datos; lectura y borrado restringidos a `request.auth != null`. | `ContactoService` |
 | `/usuarios/{id}` | **Privado (Lectura)** / **Denegado (Escritura)** | Lista blanca de operadores autorizados (RBAC). Lectura para verificación de identidad (`request.auth != null`), escritura bloqueada (`false`). | `AuthService` / Firebase Rules |
 

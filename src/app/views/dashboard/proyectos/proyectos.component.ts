@@ -17,12 +17,15 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError, map, take } from 'rxjs/operators';
 import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../../../utils/contract-pdf-generator';
 import { generateActaGarantiaPDF } from '../../../utils/acta-garantia-pdf-generator';
 import { BovedaCredencialesDialogComponent } from './boveda-dialog/boveda-dialog.component';
 import { EditarClienteDialogComponent, EditarClienteDialogData } from '../clientes/editar-cliente-dialog/editar-cliente-dialog.component';
+import { NuevaVersionDialogComponent } from './nueva-version-dialog/nueva-version-dialog.component';
 
 export interface ProyectoView extends Proyecto {
   clientName?: string;
@@ -54,7 +57,9 @@ export const KANBAN_COLUMNS = [
     MatMenuModule,
     MatButtonToggleModule,
     MatDividerModule,
-    MatDialogModule
+    MatDialogModule,
+    MatSelectModule,
+    MatFormFieldModule,
   ],
   templateUrl: './proyectos.component.html',
   styleUrls: ['./proyectos.component.scss']
@@ -70,14 +75,60 @@ export class ProyectosComponent implements OnInit, OnDestroy {
   private sub?: Subscription;
 
   proyectos = signal<ProyectoView[]>([]);
+  clientes = signal<Cliente[]>([]);
+  clienteFiltroId = signal<string>('todos');
   isLoading = signal<boolean>(true);
-  vistaModo: 'kanban' | 'tabla' = 'kanban';
+  vistaModo: 'kanban' | 'tabla' | 'carpeta' = 'kanban';
   kanbanColumns = KANBAN_COLUMNS;
   displayedColumns: string[] = ['title', 'client', 'phase', 'status', 'actions'];
 
   ngOnInit(): void {
+    this.verificarEntregadosVencidos();
+    this.cargarFiltroClientes();
     this.sincronizarPropuestasAprobadas();
     this.iniciarEscuchaTiempoReal();
+  }
+
+  cargarFiltroClientes(): void {
+    this.clientesService.getClientes().subscribe({
+      next: (data) => this.clientes.set(data),
+      error: (e) => console.warn('Error al cargar lista de clientes para filtro:', e),
+    });
+  }
+
+  verificarEntregadosVencidos(): void {
+    this.proyectosService.verificarYArchivarEntregadosVencidos().then((count) => {
+      if (count > 0) {
+        this.snackBar.open(`📦 ${count} proyecto(s) entregados ayer fueron derivados automáticamente al Histórico.`, 'Ver Histórico', { duration: 4500 })
+          .onAction().subscribe(() => this.router.navigate(['/dashboard/historico']));
+      }
+    });
+  }
+
+  cambiarFiltroCliente(id: string): void {
+    this.clienteFiltroId.set(id);
+  }
+
+  /**
+   * Determina cuántas horas pasaron desde la entrega de un proyecto.
+   */
+  horasDesdeEntrega(p: ProyectoView): number {
+    const fecha = p.fechaEntrega ? new Date(p.fechaEntrega).getTime() : (p.updatedAt ? new Date(p.updatedAt).getTime() : Date.now());
+    return Math.max(0, Math.floor((Date.now() - fecha) / (1000 * 60 * 60)));
+  }
+
+  abrirNuevaVersionDialog(proyectoMadre: ProyectoView): void {
+    const dialogRef = this.dialog.open(NuevaVersionDialogComponent, {
+      width: '640px',
+      disableClose: true,
+      data: { proyectoMadre },
+    });
+
+    dialogRef.afterClosed().subscribe((creado) => {
+      if (creado) {
+        this.cargarProyectos();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -153,9 +204,13 @@ export class ProyectosComponent implements OnInit, OnDestroy {
   }
 
   proyectosPorEstado(estadoId: string): ProyectoView[] {
+    const filtro = this.clienteFiltroId();
     return this.proyectos().filter(p => {
       // Excluir proyectos archivados del tablero operativo (se visualizan en la sección Histórico)
       if (p.status === 'archivado') return false;
+
+      // Filtro por cliente
+      if (filtro !== 'todos' && p.clientId !== filtro) return false;
 
       if (estadoId === 'esperando_anticipo') {
         return p.status === 'esperando_anticipo' || (p.status as string) === 'pendiente';
@@ -165,6 +220,67 @@ export class ProyectosComponent implements OnInit, OnDestroy {
       }
       return p.status === estadoId;
     });
+  }
+
+  /**
+   * Agrupa los proyectos por Cliente y dentro por Proyecto Madre (Suite) para visualización en árbol de carpetas.
+   */
+  get gruposClienteYMadre(): {
+    clientId: string;
+    clientName: string;
+    clientCompany?: string;
+    suites: {
+      madre: ProyectoView;
+      versiones: ProyectoView[];
+    }[];
+  }[] {
+    const filtro = this.clienteFiltroId();
+    const todos = this.proyectos().filter((p) => filtro === 'todos' || p.clientId === filtro);
+
+    // 1. Agrupar por clientId
+    const clientesMap = new Map<string, ProyectoView[]>();
+    todos.forEach((p) => {
+      const cid = p.clientId || 'sin_cliente';
+      if (!clientesMap.has(cid)) {
+        clientesMap.set(cid, []);
+      }
+      clientesMap.get(cid)!.push(p);
+    });
+
+    const resultado: any[] = [];
+
+    clientesMap.forEach((proyectosDelCliente, cid) => {
+      const primerP = proyectosDelCliente[0];
+      const clientName = primerP?.clientName || 'Cliente';
+      const clientCompany = primerP?.clientCompany;
+
+      // 2. Identificar proyectos madre (no tienen parentProjectId) y versiones hijas
+      const madres = proyectosDelCliente.filter((p) => !p.parentProjectId);
+      const hijas = proyectosDelCliente.filter((p) => !!p.parentProjectId);
+
+      const suites: { madre: ProyectoView; versiones: ProyectoView[] }[] = [];
+
+      madres.forEach((madre) => {
+        const versiones = hijas.filter((h) => h.parentProjectId === madre.id);
+        suites.push({ madre, versiones });
+      });
+
+      // Si alguna hija no encontró madre (hija huérfana)
+      hijas.forEach((hija) => {
+        if (!suites.some((s) => s.versiones.some((v) => v.id === hija.id))) {
+          suites.push({ madre: hija, versiones: [] });
+        }
+      });
+
+      resultado.push({
+        clientId: cid,
+        clientName,
+        clientCompany,
+        suites,
+      });
+    });
+
+    return resultado;
   }
 
   /**

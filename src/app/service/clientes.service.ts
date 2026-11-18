@@ -21,6 +21,7 @@ export interface Cliente {
   email: string;
   phone?: string;
   company?: string;
+  logoUrl?: string;
   address?: string;
   notes?: string;
   reputationScore?: number;
@@ -136,6 +137,7 @@ export class ClientesService {
       email: cliente.email,
       phone: cliente.phone || null,
       company: cliente.company || null,
+      logoUrl: cliente.logoUrl || null,
       address: cliente.address || null,
       notes: cliente.notes || null,
       reputationScore: cliente.reputationScore ?? 0,

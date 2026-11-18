@@ -1,0 +1,311 @@
+<div class="nuevo-informe-container">
+  <div class="page-header">
+    <button mat-icon-button routerLink="/dashboard/informes" matTooltip="Volver al listado">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div>
+      <h1>{{ esEdicion ? 'Editar Propuesta Técnica' : 'Nueva Propuesta Técnica & Diagnóstico' }}</h1>
+      <p class="subtitle">
+        {{ esEdicion ? 'Ajustá el informe de problemática y solución técnica' : 'Elaborá el diagnóstico, solución y visión de valor antes de enviar números fríos' }}
+      </p>
+    </div>
+  </div>
+
+  @if (cargandoDatos) {
+    <div class="loading-state">
+      <mat-spinner diameter="44"></mat-spinner>
+      <p>Cargando datos del informe...</p>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
+
+      <!-- SECCIÓN 1: Cliente Destinatario -->
+      <mat-card class="form-section">
+        <mat-card-header style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <mat-icon mat-card-avatar>person</mat-icon>
+            <mat-card-title>Cliente & Empresa</mat-card-title>
+          </div>
+          <button type="button" mat-stroked-button color="primary" (click)="abrirNuevoClienteDialog()">
+            <mat-icon>person_add</mat-icon>
+            Nuevo Cliente
+          </button>
+        </mat-card-header>
+
+        <mat-card-content class="fields-row">
+          <mat-form-field appearance="outline" class="field-half">
+            <mat-label>Nombre del Cliente o Empresa</mat-label>
+            <mat-icon matPrefix>business</mat-icon>
+            <input
+              matInput
+              type="text"
+              formControlName="clientName"
+              [matAutocomplete]="autoClient"
+              placeholder="Buscar en CRM o escribir..."
+            />
+            <mat-autocomplete
+              #autoClient="matAutocomplete"
+              [displayWith]="displayClienteFn"
+              (optionSelected)="onClienteSelected($event)"
+            >
+              @for (cliente of filteredClientes | async; track cliente.id) {
+                <mat-option [value]="cliente">
+                  {{ cliente.name }} <small class="text-muted">({{ cliente.company || 'Particular' }})</small>
+                </mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-half">
+            <mat-label>Empresa / Marca</mat-label>
+            <mat-icon matPrefix>store</mat-icon>
+            <input matInput formControlName="clientCompany" placeholder="Ej: Distribuidora Norte" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-half">
+            <mat-label>Email de Contacto</mat-label>
+            <mat-icon matPrefix>email</mat-icon>
+            <input matInput formControlName="clientEmail" type="email" placeholder="cliente@empresa.com" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-half">
+            <mat-label>Teléfono (WhatsApp)</mat-label>
+            <mat-icon matPrefix>phone</mat-icon>
+            <input matInput formControlName="clientPhone" placeholder="+54 9 11..." />
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- SECCIÓN 2: Diagnóstico & Problemática Detectada -->
+      <mat-card class="form-section">
+        <mat-card-header>
+          <mat-icon mat-card-avatar style="color: #ef4444;">error_outline</mat-icon>
+          <mat-card-title>1. Diagnóstico & Problemática Actual</mat-card-title>
+          <mat-card-subtitle>Qué está fallando, qué pidió revisar el cliente o qué detectamos que limita su crecimiento.</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Título de la Propuesta / Asunto</mat-label>
+            <mat-icon matPrefix>title</mat-icon>
+            <input matInput formControlName="title" placeholder="Ej: Diagnóstico de Operaciones y Propuesta de Modernización de Sistema" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Situación Actual (Diagnóstico en detalle)</mat-label>
+            <textarea
+              matInput
+              rows="4"
+              formControlName="situacionActual"
+              placeholder="Describí el estado actual del negocio o sistema del cliente, las dificultades que manifiestan o el problema que nos plantearon..."
+            ></textarea>
+          </mat-form-field>
+
+          <div class="dynamic-list-container">
+            <div class="list-header">
+              <span class="list-title">Puntos Críticos / Problemas Identificados:</span>
+              <button type="button" mat-stroked-button (click)="agregarProblema()">
+                <mat-icon>add</mat-icon> Agregar Problema
+              </button>
+            </div>
+
+            <div formArrayName="problemasDetectados" class="items-list">
+              @for (prob of problemasArray.controls; track $index) {
+                <div class="dynamic-item-row">
+                  <mat-form-field appearance="outline" class="field-grow">
+                    <mat-label>Problema #{{ $index + 1 }}</mat-label>
+                    <input matInput [formControlName]="$index" placeholder="Ej: Registros manuales en planillas que generan discrepancias de stock" />
+                  </mat-form-field>
+
+                  <button
+                    type="button"
+                    mat-icon-button
+                    color="warn"
+                    (click)="quitarProblema($index)"
+                    [disabled]="problemasArray.length <= 1"
+                    matTooltip="Quitar"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- SECCIÓN 3: Propuesta de Solución & Valor Agregado -->
+      <mat-card class="form-section">
+        <mat-card-header>
+          <mat-icon mat-card-avatar style="color: #3b82f6;">lightbulb</mat-icon>
+          <mat-card-title>2. Propuesta de Solución & Alcances</mat-card-title>
+          <mat-card-subtitle>Cómo resolvemos la problemática, qué tenemos para ofrecer y cómo hacemos valer la solución técnica.</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Resumen Ejecutivo de la Solución</mat-label>
+            <textarea
+              matInput
+              rows="3"
+              formControlName="resumenSolucion"
+              placeholder="Explicá de forma clara la arquitectura o solución integral que proponemos desde WolfTeI..."
+            ></textarea>
+          </mat-form-field>
+
+          <!-- Desglose de Módulos / Solución -->
+          <div class="dynamic-list-container">
+            <div class="list-header">
+              <div>
+                <span class="list-title">Módulos & Componentes Técnicos Propuestos:</span>
+                <p class="text-muted" style="margin: 2px 0 0 0; font-size: 12px;">
+                  Detallá cada pieza para que el cliente note el trabajo y la ingeniería que hay detrás antes de presupuestar.
+                </p>
+              </div>
+              <button type="button" mat-stroked-button color="primary" (click)="agregarModulo()">
+                <mat-icon>add_circle_outline</mat-icon> Agregar Componente
+              </button>
+            </div>
+
+            <div formArrayName="modulosSolucion" class="modulos-list">
+              @for (mod of modulosArray.controls; track $index) {
+                <div [formGroupName]="$index" class="modulo-card">
+                  <div class="modulo-card-header">
+                    <strong>Componente #{{ $index + 1 }}</strong>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      (click)="quitarModulo($index)"
+                      [disabled]="modulosArray.length <= 1"
+                      matTooltip="Eliminar componente"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+
+                  <div class="fields-row">
+                    <mat-form-field appearance="outline" class="field-full">
+                      <mat-label>Título del Componente / Módulo</mat-label>
+                      <input matInput formControlName="titulo" placeholder="Ej: Backend Centralizado en la Nube con API REST" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="field-full">
+                      <mat-label>¿Qué hace y cómo resuelve el problema?</mat-label>
+                      <textarea
+                        matInput
+                        rows="2"
+                        formControlName="descripcion"
+                        placeholder="Explicá el funcionamiento y por qué es fundamental..."
+                      ></textarea>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="field-half">
+                      <mat-label>Valor / Impacto para el cliente</mat-label>
+                      <input matInput formControlName="impactoOValor" placeholder="Ej: Disponibilidad 24/7 y acceso seguro multi-sucursal" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="field-half">
+                      <mat-label>Plazo o dedicación sugerida (opcional)</mat-label>
+                      <input matInput formControlName="tiempoEstimadoSugerido" placeholder="Ej: 2 a 3 semanas de desarrollo" />
+                    </mat-form-field>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Beneficios Clave -->
+          <div class="dynamic-list-container" style="margin-top: 24px;">
+            <div class="list-header">
+              <span class="list-title">Beneficios Clave & Diferenciadores:</span>
+              <button type="button" mat-stroked-button (click)="agregarBeneficio()">
+                <mat-icon>add</mat-icon> Agregar Beneficio
+              </button>
+            </div>
+
+            <div formArrayName="beneficiosClave" class="items-list">
+              @for (ben of beneficiosArray.controls; track $index) {
+                <div class="dynamic-item-row">
+                  <mat-form-field appearance="outline" class="field-grow">
+                    <mat-label>Beneficio #{{ $index + 1 }}</mat-label>
+                    <input matInput [formControlName]="$index" placeholder="Ej: Reducción del 40% en tiempos de respuesta..." />
+                  </mat-form-field>
+
+                  <button
+                    type="button"
+                    mat-icon-button
+                    color="warn"
+                    (click)="quitarBeneficio($index)"
+                    [disabled]="beneficiosArray.length <= 1"
+                    matTooltip="Quitar"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+
+        </mat-card-content>
+      </mat-card>
+
+      <!-- SECCIÓN 4: Prospecto a Futuro & Escalabilidad -->
+      <mat-card class="form-section">
+        <mat-card-header>
+          <mat-icon mat-card-avatar style="color: #8b5cf6;">rocket_launch</mat-icon>
+          <mat-card-title>3. Prospecto a Futuro & Escalabilidad</mat-card-title>
+          <mat-card-subtitle>Hacia dónde puede evolucionar la solución en etapas posteriores.</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Visión de Evolución Futura</mat-label>
+            <textarea
+              matInput
+              rows="3"
+              formControlName="prospectoFuturo"
+              placeholder="Ej: Una vez consolidada la plataforma central, el sistema permitirá incorporar clientes móviles para cobranza en calle, integración con pasarelas de pago y analítica predictiva..."
+            ></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Stack Tecnológico Recomendado (Opcional)</mat-label>
+            <input
+              matInput
+              formControlName="tecnologiasRecomendadas"
+              placeholder="Ej: Node.js + Firebase Firestore + Angular v22 + Servidores dedicados"
+            />
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- SECCIÓN 5: Estado & Envío -->
+      <mat-card class="form-section">
+        <mat-card-content class="form-actions-bar">
+          <mat-form-field appearance="outline" style="min-width: 220px;">
+            <mat-label>Estado del Informe</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="borrador">Borrador</mat-option>
+              <mat-option value="enviado">Presentado / Enviado</mat-option>
+              <mat-option value="en_revision">En Revisión con el Cliente</mat-option>
+              <mat-option value="aprobado">Aprobado / Visto Bueno</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <span class="spacer"></span>
+
+          <button type="button" mat-stroked-button routerLink="/dashboard/informes">
+            Cancelar
+          </button>
+
+          <button type="submit" mat-flat-button color="primary" [disabled]="guardando">
+            <mat-icon>save</mat-icon>
+            {{ esEdicion ? 'Guardar Cambios' : 'Generar Propuesta Técnica' }}
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+    </form>
+  }
+</div>

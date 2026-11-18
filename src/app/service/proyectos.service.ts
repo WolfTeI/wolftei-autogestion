@@ -6,6 +6,7 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -50,12 +51,22 @@ export interface Proyecto {
   currency: string;
   anticipoCobrado?: boolean;
   saldoCobrado?: boolean;
+  fechaEntrega?: string | null;
   archivadoFecha?: string | null;
   reviewToken?: string | null;
   reviewCompleted?: boolean;
   reviewStars?: number;
   reviewComment?: string;
   reviewPublicada?: boolean;
+
+  // ── Jerarquía de Proyecto Madre, Versiones y Módulos Evolutivos ──
+  esProyectoMadre?: boolean;
+  parentProjectId?: string | null;
+  parentProjectTitle?: string | null;
+  versionTag?: string;
+  tipoEvolucion?: 'inicial' | 'actualizacion_paradigma' | 'modulo_nuevo' | 'migracion' | 'mantenimiento';
+  changelog?: string;
+
   // Bóveda de credenciales e infraestructura cifrada
   credenciales?: CredencialBoveda[];
   proveedorInfra?: string;
@@ -235,13 +246,104 @@ export class ProyectosService {
   private async updateProyectoById(id: string, proyecto: Partial<Proyecto>): Promise<any> {
     const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, id);
     const { id: _, ...datosActualizados } = proyecto as any;
-    const payload = {
+    const now = new Date().toISOString();
+    const payload: any = {
       ...datosActualizados,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     };
+
+    // Si pasa a estado 'entregado' y no tiene estampada fechaEntrega, la registramos
+    if (proyecto.status === 'entregado' && !proyecto.fechaEntrega) {
+      payload.fechaEntrega = now;
+    }
 
     await updateDoc(docRef, payload);
     return { message: 'Proyecto actualizado exitosamente' };
+  }
+
+  /**
+   * Verifica los proyectos con estado 'entregado' y si transcurrieron más de 24 horas (al día siguiente),
+   * los archiva automáticamente enviándolos al Histórico.
+   */
+  async verificarYArchivarEntregadosVencidos(): Promise<number> {
+    try {
+      const colRef = collection(this.firebaseService.db, this.COLLECTION_NAME);
+      const q = query(colRef, where('status', '==', 'entregado'));
+      const snap = await getDocs(q);
+      const now = Date.now();
+      let archivados = 0;
+
+      for (const docSnap of snap.docs) {
+        const data = docSnap.data() as Proyecto;
+        const fechaEntrega = data.fechaEntrega ? new Date(data.fechaEntrega).getTime() : (data.updatedAt ? new Date(data.updatedAt).getTime() : 0);
+        // Si transcurrieron 24 horas (86.400.000 ms) o más desde que se entregó
+        if (fechaEntrega && (now - fechaEntrega >= 24 * 60 * 60 * 1000)) {
+          await updateDoc(doc(this.firebaseService.db, this.COLLECTION_NAME, docSnap.id), {
+            status: 'archivado',
+            archivadoFecha: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+          archivados++;
+        }
+      }
+      return archivados;
+    } catch (e) {
+      console.warn('Error al verificar entregados para archivar:', e);
+      return 0;
+    }
+  }
+
+  /**
+   * Crea una nueva versión, actualización de paradigma o módulo evolutivo bajo un Proyecto Madre existente.
+   */
+  crearEvolucionProyecto(params: {
+    parentProjectId: string;
+    parentProjectTitle: string;
+    clientId: string;
+    versionTag: string;
+    title: string;
+    description: string;
+    tipoEvolucion: 'actualizacion_paradigma' | 'modulo_nuevo' | 'migracion' | 'mantenimiento';
+    changelog: string;
+    totalAmount?: number;
+    currency?: string;
+  }): Observable<{ id: string; message: string }> {
+    return from(this.executeCrearEvolucion(params));
+  }
+
+  private async executeCrearEvolucion(params: any): Promise<{ id: string; message: string }> {
+    const colRef = collection(this.firebaseService.db, this.COLLECTION_NAME);
+    const now = new Date().toISOString();
+
+    // 1. Asegurar que el proyecto padre quede marcado como Proyecto Madre
+    const parentRef = doc(this.firebaseService.db, this.COLLECTION_NAME, params.parentProjectId);
+    await updateDoc(parentRef, {
+      esProyectoMadre: true,
+      updatedAt: now,
+    });
+
+    // 2. Crear la iteración/módulo nuevo
+    const payload = {
+      clientId: params.clientId,
+      parentProjectId: params.parentProjectId,
+      parentProjectTitle: params.parentProjectTitle,
+      esProyectoMadre: false,
+      title: params.title,
+      versionTag: params.versionTag,
+      tipoEvolucion: params.tipoEvolucion,
+      changelog: params.changelog || '',
+      description: params.description || '',
+      status: 'en_progreso',
+      currentPhase: 'Desarrollo',
+      totalAmount: params.totalAmount || 0,
+      currency: params.currency || 'USD',
+      startDate: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const docRef = await addDoc(colRef, payload);
+    return { id: docRef.id, message: 'Nueva versión o módulo registrado exitosamente' };
   }
 
   /**
@@ -273,20 +375,44 @@ export class ProyectosService {
     }
 
     const data = docSnap.data();
-    if (data['reviewToken']) {
+    let reviewToken = data['reviewToken'];
+
+    // Si no tiene reviewToken pero es un módulo hijo de un Proyecto Madre, heredar el token de la Madre
+    if (!reviewToken && data['parentProjectId']) {
+      try {
+        const parentDoc = await getDoc(doc(this.firebaseService.db, this.COLLECTION_NAME, data['parentProjectId']));
+        if (parentDoc.exists() && parentDoc.data()['reviewToken']) {
+          reviewToken = parentDoc.data()['reviewToken'];
+        }
+      } catch (e) {
+        console.warn('Error al heredar reviewToken del Proyecto Madre:', e);
+      }
+    }
+
+    if (reviewToken) {
+      if (data['status'] !== 'entregado' || !data['reviewToken']) {
+        await updateDoc(docRef, {
+          reviewToken,
+          status: 'entregado',
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      this.sincronizarVitrinaPublica();
       return {
-        message: 'El proyecto ya cuenta con enlace de encuesta.',
-        reviewToken: data['reviewToken'],
-        link: `/feedback/${data['reviewToken']}`,
+        message: 'Enlace de encuesta unificado (permite actualizar la valoración anterior).',
+        reviewToken,
+        link: `/feedback/${reviewToken}`,
       };
     }
 
-    const reviewToken = this.generarTokenEncuesta();
+    reviewToken = this.generarTokenEncuesta();
     await updateDoc(docRef, {
       reviewToken,
       status: 'entregado',
       updatedAt: new Date().toISOString(),
     });
+
+    this.sincronizarVitrinaPublica();
 
     return {
       message: 'Enlace de encuesta generado con éxito',
@@ -296,7 +422,7 @@ export class ProyectosService {
   }
 
   /**
-   * Modera una reseña alternando su visibilidad en el portal web público.
+   * Modera una reseña alternando su visibilidad en el portal web público y sincroniza la vitrina.
    */
   alternarPublicacionResena(proyectoId: string, publicada: boolean): Observable<void> {
     const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, proyectoId);
@@ -304,8 +430,71 @@ export class ProyectosService {
       updateDoc(docRef, {
         reviewPublicada: publicada,
         updatedAt: new Date().toISOString(),
-      })
+      }).then(() => this.sincronizarVitrinaPublica())
     );
+  }
+
+  /**
+   * Sincroniza la vitrina pública (/showcase/home) para el portal web:
+   * 1. Logos de empresas que tengan al menos 1 contrato cerrado/entregado ('entregado' o 'archivado') y posean logoUrl.
+   *    (Sin ningún otro dato del cliente, solo el logo de la empresa).
+   * 2. Reseñas aprobadas de proyectos entregados.
+   * Protege estrictamente datos sensibles o PII (OWASP A01 / ISO 27001).
+   */
+  async sincronizarVitrinaPublica(): Promise<void> {
+    try {
+      const db = this.firebaseService.db;
+      // 1. Buscar proyectos entregados o archivados
+      const projectsCol = collection(db, this.COLLECTION_NAME);
+      const snapP = await getDocs(projectsCol);
+
+      const clientIdsConEntregas = new Set<string>();
+      const reviewsPublicadas: any[] = [];
+
+      snapP.docs.forEach((docSnap) => {
+        const p = docSnap.data() as Proyecto;
+        if (p.status === 'entregado' || p.status === 'archivado') {
+          if (p.clientId) {
+            clientIdsConEntregas.add(p.clientId);
+          }
+          if (p.reviewCompleted && p.reviewPublicada && p.reviewComment) {
+            reviewsPublicadas.push({
+              id: docSnap.id,
+              stars: p.reviewStars || 5,
+              comment: p.reviewComment,
+              projectTitle: p.title || 'Desarrollo de Software',
+            });
+          }
+        }
+      });
+
+      // 2. Obtener logos de esos clientes con entregas cumplidas
+      const logos: { id: string; logoUrl: string }[] = [];
+      const clientsCol = collection(db, 'clients');
+      const snapC = await getDocs(clientsCol);
+
+      snapC.docs.forEach((docSnap) => {
+        const c = docSnap.data() as any;
+        if (clientIdsConEntregas.has(docSnap.id) && c.logoUrl && typeof c.logoUrl === 'string' && c.logoUrl.trim()) {
+          // EXCLUSIVAMENTE el logo de la empresa, sin nombres ni datos personales
+          logos.push({
+            id: docSnap.id,
+            logoUrl: c.logoUrl.trim(),
+          });
+        }
+      });
+
+      // 3. Escribir documento público /showcase/home
+      const showcaseRef = doc(db, 'showcase', 'home');
+      await setDoc(showcaseRef, {
+        logos,
+        reviews: reviewsPublicadas,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+
+    } catch (e) {
+      console.warn('Error al sincronizar vitrina pública:', e);
+    }
   }
 
   /**

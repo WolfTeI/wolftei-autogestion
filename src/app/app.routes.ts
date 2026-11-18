@@ -34,7 +34,36 @@ export const routes: Routes = [
             (m) => m.MessagesComponent,
           ),
       },
-      // ── Propuestas Comerciales ──
+      // ── Propuestas Técnicas & Informes Diagnósticos ──
+      {
+        path: 'informes',
+        loadComponent: () =>
+          import('./views/dashboard/informes/informes.component').then(
+            (m) => m.InformesComponent,
+          ),
+      },
+      {
+        path: 'informes/nuevo',
+        loadComponent: () =>
+          import('./views/dashboard/informes/nuevo-informe/nuevo-informe.component').then(
+            (m) => m.NuevoInformeComponent,
+          ),
+      },
+      {
+        path: 'informes/:id/editar',
+        loadComponent: () =>
+          import('./views/dashboard/informes/nuevo-informe/nuevo-informe.component').then(
+            (m) => m.NuevoInformeComponent,
+          ),
+      },
+      {
+        path: 'informes/:id',
+        loadComponent: () =>
+          import('./views/dashboard/informes/detalle-informe/detalle-informe.component').then(
+            (m) => m.DetalleInformeComponent,
+          ),
+      },
+      // ── Presupuestos Comerciales ──
       {
         path: 'propuestas',
         loadComponent: () =>

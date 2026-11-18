@@ -19,6 +19,12 @@ service cloud.firestore {
             && request.resource.data.status == 'aceptado');
     }
 
+    // Colección de Propuestas Técnicas & Informes Diagnósticos
+    match /technical_proposals/{informeId} {
+      allow read: if request.auth != null || resource.data.token != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
     // Directorio de Clientes (CRM) - Privado
     match /clients/{clientId} {
       allow read, write: if request.auth != null;
@@ -50,6 +56,12 @@ service cloud.firestore {
 
     // Configuración comercial del sitio (Settings)
     match /settings/{settingId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Vitrina pública institucional (Logos de empresas con proyectos entregados y Reseñas)
+    match /showcase/{docId} {
       allow read: if true;
       allow write: if request.auth != null;
     }

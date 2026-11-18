@@ -1,0 +1,150 @@
+<div class="detalle-informe-container">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="44"></mat-spinner>
+      <p>Cargando propuesta técnica...</p>
+    </div>
+  } @else if (informe(); as inf) {
+    <!-- Cabecera de Acciones -->
+    <div class="page-header">
+      <div class="header-left">
+        <button mat-icon-button (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1>{{ inf.title }}</h1>
+          <p class="subtitle">
+            Cliente: <strong>{{ inf.clientName }}</strong>
+            @if (inf.clientCompany) { ({{ inf.clientCompany }}) }
+            · Ref: <code>{{ inf.token }}</code>
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button mat-stroked-button color="primary" (click)="descargarPdf()">
+          <mat-icon style="color: #ef4444;">picture_as_pdf</mat-icon>
+          Descargar PDF
+        </button>
+
+        @if (inf.clientPhone) {
+          <button mat-stroked-button (click)="compartirWhatsApp()" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4);">
+            <mat-icon style="color: #10b981;">chat</mat-icon>
+            WhatsApp
+          </button>
+        }
+
+        <button mat-flat-button color="accent" (click)="convertirEnPresupuesto()">
+          <mat-icon>request_quote</mat-icon>
+          Convertir en Presupuesto
+        </button>
+
+        <button mat-icon-button [routerLink]="['/dashboard/informes', inf.id, 'editar']" matTooltip="Editar propuesta">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenido del Informe -->
+    <div class="cards-grid">
+
+      <!-- Ficha de Diagnóstico & Problemas -->
+      <mat-card class="content-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar style="color: #ef4444;">error_outline</mat-icon>
+          <mat-card-title>1. Diagnóstico & Problemática Detectada</mat-card-title>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content class="card-body">
+          <p class="section-text">{{ inf.situacionActual }}</p>
+
+          @if (inf.problemasDetectados && inf.problemasDetectados.length > 0) {
+            <h4 class="subheading">Puntos Críticos Identificados:</h4>
+            <ul class="issues-list">
+              @for (prob of inf.problemasDetectados; track $index) {
+                <li>
+                  <mat-icon style="color: #ef4444;">cancel</mat-icon>
+                  <span>{{ prob }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Ficha de Solución Propuesta & Módulos -->
+      <mat-card class="content-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar style="color: #3b82f6;">lightbulb</mat-icon>
+          <mat-card-title>2. Propuesta de Solución & Alcances</mat-card-title>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content class="card-body">
+          <p class="section-text">{{ inf.resumenSolucion }}</p>
+
+          @if (inf.modulosSolucion && inf.modulosSolucion.length > 0) {
+            <h4 class="subheading">Componentes & Desarrollo de Fondo:</h4>
+            <div class="modules-grid">
+              @for (mod of inf.modulosSolucion; track $index) {
+                <div class="module-item">
+                  <div class="module-title">
+                    <mat-icon>settings_suggest</mat-icon>
+                    <strong>{{ $index + 1 }}. {{ mod.titulo }}</strong>
+                  </div>
+                  <p class="module-desc">{{ mod.descripcion }}</p>
+                  @if (mod.impactoOValor) {
+                    <div class="module-impact">
+                      <mat-icon>verified</mat-icon>
+                      <span><strong>Impacto:</strong> {{ mod.impactoOValor }}</span>
+                    </div>
+                  }
+                  @if (mod.tiempoEstimadoSugerido) {
+                    <small class="text-muted block" style="margin-top: 6px;">
+                      Dedicación sugerida: {{ mod.tiempoEstimadoSugerido }}
+                    </small>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @if (inf.beneficiosClave && inf.beneficiosClave.length > 0) {
+            <h4 class="subheading" style="margin-top: 24px;">Beneficios Clave:</h4>
+            <ul class="benefits-list">
+              @for (ben of inf.beneficiosClave; track $index) {
+                <li>
+                  <mat-icon style="color: #10b981;">check_circle</mat-icon>
+                  <span>{{ ben }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Ficha de Prospecto a Futuro -->
+      @if (inf.prospectoFuturo || inf.tecnologiasRecomendadas) {
+        <mat-card class="content-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar style="color: #8b5cf6;">rocket_launch</mat-icon>
+            <mat-card-title>3. Prospecto a Futuro & Escalabilidad</mat-card-title>
+          </mat-card-header>
+          <mat-divider></mat-divider>
+          <mat-card-content class="card-body">
+            @if (inf.prospectoFuturo) {
+              <p class="section-text">{{ inf.prospectoFuturo }}</p>
+            }
+
+            @if (inf.tecnologiasRecomendadas) {
+              <div class="tech-stack-box">
+                <mat-icon>memory</mat-icon>
+                <span><strong>Stack Recomendado:</strong> {{ inf.tecnologiasRecomendadas }}</span>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+
+    </div>
+  }
+</div>

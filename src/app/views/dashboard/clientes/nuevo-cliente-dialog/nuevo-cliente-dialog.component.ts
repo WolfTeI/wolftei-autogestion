@@ -44,6 +44,7 @@ export class NuevoClienteDialogComponent {
     email: ['', [Validators.required, Validators.email]],
     phone: [''],
     address: [''],
+    logoUrl: [''],
     notes: ['']
   });
 

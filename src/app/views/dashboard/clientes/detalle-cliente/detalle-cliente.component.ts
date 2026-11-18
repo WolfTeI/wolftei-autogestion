@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,6 +7,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ClientesService, Cliente } from '../../../../service/clientes.service';
 import { ProyectosService, Proyecto } from '../../../../service/proyectos.service';
+import { PropuestasService, Propuesta } from '../../../../service/propuestas.service';
 import { WhatsAppService } from '../../../../service/whatsapp.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
@@ -14,7 +15,9 @@ import { MatListModule } from '@angular/material/list';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../../../../utils/contract-pdf-generator';
+import { EditarClienteDialogComponent } from '../editar-cliente-dialog/editar-cliente-dialog.component';
 
 @Component({
   selector: 'app-detalle-cliente',
@@ -31,7 +34,8 @@ import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../.
     MatListModule,
     MatSnackBarModule,
     MatMenuModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatDialogModule
   ],
   templateUrl: './detalle-cliente.component.html',
   styleUrls: ['./detalle-cliente.component.scss']
@@ -41,38 +45,62 @@ export class DetalleClienteComponent implements OnInit {
   private location = inject(Location);
   private clientesService = inject(ClientesService);
   private proyectosService = inject(ProyectosService);
+  private propuestasService = inject(PropuestasService);
   private whatsAppService = inject(WhatsAppService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
-  cliente: Cliente | null = null;
-  proyectos: Proyecto[] = [];
-  isLoading = true;
+  cliente = signal<Cliente | null>(null);
+  proyectos = signal<Proyecto[]>([]);
+  propuestas = signal<Propuesta[]>([]);
+  isLoading = signal<boolean>(true);
 
   async contactarWhatsApp(): Promise<void> {
-    if (!this.cliente?.phone) {
+    const cli = this.cliente();
+    if (!cli?.phone) {
       this.snackBar.open('⚠️ El cliente no tiene teléfono registrado.', 'Cerrar', { duration: 3000 });
       return;
     }
-    this.snackBar.open(`💬 Abriendo chat con ${this.cliente.name}...`, 'Cerrar', { duration: 3000 });
-    await this.whatsAppService.abrirChat(this.cliente.phone, `¡Hola ${this.cliente.name}! Te escribo desde WolfTeI.`);
+    this.snackBar.open(`💬 Abriendo chat con ${cli.name}...`, 'Cerrar', { duration: 3000 });
+    await this.whatsAppService.abrirChat(cli.phone, `¡Hola ${cli.name}! Te escribo desde WolfTeI.`);
   }
 
   descargarContrato(): void {
-    if (!this.cliente) return;
-    generateContractPDF(this.cliente);
+    const cli = this.cliente();
+    if (!cli) return;
+    generateContractPDF(cli);
     this.snackBar.open('📄 Contrato de Desarrollo generado con éxito.', 'Cerrar', { duration: 3000 });
   }
 
   descargarNDA(): void {
-    if (!this.cliente) return;
-    generateNDAPDF(this.cliente);
+    const cli = this.cliente();
+    if (!cli) return;
+    generateNDAPDF(cli);
     this.snackBar.open('🔒 Acuerdo de Confidencialidad (NDA) generado con éxito.', 'Cerrar', { duration: 3000 });
   }
 
   descargarAmbos(): void {
-    if (!this.cliente) return;
-    generateBothLegalPDFs(this.cliente);
+    const cli = this.cliente();
+    if (!cli) return;
+    generateBothLegalPDFs(cli);
     this.snackBar.open('📦 Contrato de Desarrollo y NDA generados con éxito.', 'Cerrar', { duration: 3000 });
+  }
+
+  abrirEditarClienteDialog(): void {
+    const current = this.cliente();
+    if (!current) return;
+    const dialogRef = this.dialog.open(EditarClienteDialogComponent, {
+      width: '600px',
+      disableClose: true,
+      autoFocus: true,
+      data: { cliente: current }
+    });
+
+    dialogRef.afterClosed().subscribe((clienteActualizado) => {
+      if (clienteActualizado && current.id) {
+        this.cargarDatos(current.id);
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -83,15 +111,16 @@ export class DetalleClienteComponent implements OnInit {
   }
 
   cargarDatos(id: string) {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.clientesService.getCliente(id).subscribe({
       next: (clienteData) => {
-        this.cliente = clienteData;
+        this.cliente.set(clienteData);
         this.cargarProyectos(id);
+        this.cargarPropuestas(id, clienteData.name);
       },
       error: (err) => {
         console.error('Error al cargar cliente:', err);
-        this.isLoading = false;
+        this.isLoading.set(false);
       }
     });
   }
@@ -99,13 +128,25 @@ export class DetalleClienteComponent implements OnInit {
   cargarProyectos(clientId: string) {
     this.proyectosService.getProyectosPorCliente(clientId).subscribe({
       next: (proyectosData) => {
-        this.proyectos = proyectosData;
-        this.isLoading = false;
+        this.proyectos.set(proyectosData);
+        this.isLoading.set(false);
       },
       error: (err) => {
         console.error('Error al cargar proyectos del cliente:', err);
-        this.isLoading = false;
+        this.isLoading.set(false);
       }
+    });
+  }
+
+  cargarPropuestas(clientId: string, clientName?: string) {
+    this.propuestasService.listenPropuestas().subscribe({
+      next: (props) => {
+        const delCliente = props.filter(
+          p => p.clientId === clientId || (clientName && p.clientPreviewName?.trim().toLowerCase() === clientName.trim().toLowerCase())
+        );
+        this.propuestas.set(delCliente);
+      },
+      error: (err) => console.warn('Error al cargar propuestas asociadas al cliente:', err)
     });
   }
 
@@ -117,7 +158,8 @@ export class DetalleClienteComponent implements OnInit {
     switch (status) {
       case 'entregado': return 'primary';
       case 'en_progreso': return 'accent';
-      case 'pendiente': return 'warn';
+      case 'pendiente':
+      case 'esperando_anticipo': return 'warn';
       default: return '';
     }
   }

@@ -102,7 +102,23 @@ Las dos aplicaciones comparten las siguientes colecciones principales:
   - Asigna el nombre ingresado como fallback inmediato, erradicando etiquetas como "Desconocido".
   - Sincroniza bidireccionalmente en tiempo real `clientId`, `taxId`, `phone` y `email` en la propuesta, el proyecto y el CRM.
 
-### 3.5 Propuestas Comerciales, Presupuestos y Presets
+### 3.4.2 Propuestas Técnicas & Informes Diagnósticos (Paso Previo de Consultoría)
+- **Rutas:** `/dashboard/informes`, `/dashboard/informes/nuevo`, `/dashboard/informes/:id`, `/dashboard/informes/:id/editar`
+- **Servicios:** `InformesTecnicosService` ([informes-tecnicos.service.ts](file:///d:/Programacion/Github%20WolTeI/WolfTeI-autogestion/src/app/service/informes-tecnicos.service.ts)).
+- **Generador de PDF:** `informe-pdf-generator.ts` ([informe-pdf-generator.ts](file:///d:/Programacion/Github%20WolTeI/WolfTeI-autogestion/src/app/utils/informe-pdf-generator.ts)).
+- **Objetivo Estratégico:** Documentar el diagnóstico técnico de una problemática planteada por el cliente, justificar el valor de la ingeniería requerida y presentar la arquitectura y componentes sin asustar con números fríos de entrada.
+- **Estructura del Informe:**
+  1. *Diagnóstico & Situación Actual:* Qué se detectó, qué fallas operativas existen o qué necesidad técnica se auditó.
+  2. *Propuesta de Solución & Arquitectura:* Solución integral recomendada por WolfTeI.
+  3. *Módulos y Componentes de Solución:* Desglose pedagógico de cada pieza a desarrollar con su impacto directo en el negocio.
+  4. *Beneficios Clave & Diferenciadores:* Ventajas competitivas y retorno operativo.
+  5. *Prospecto a Futuro & Escalabilidad:* Visión evolutiva para etapas posteriores.
+- **Acciones Disponibles:**
+  - Descarga inmediata de Informe formal en PDF con membrete oficial de WolfTeI.
+  - Envío automático por WhatsApp con saludo precargado.
+  - **Conversión en Presupuesto en 1 Clic:** Transfiere automáticamente el cliente, título y módulos al cotizador de presupuestos para fijar horas, márgenes y condiciones de pago.
+
+### 3.5 Presupuestos Comerciales, Cotizaciones y Presets
 - **Rutas:** `/dashboard/propuestas`, `/dashboard/propuestas/nueva`, `/dashboard/propuestas/:id`, `/dashboard/propuestas/:id/editar`
 - **Servicios:** `PropuestasService`.
 - **Características clave:**
@@ -124,14 +140,22 @@ Las dos aplicaciones comparten las siguientes colecciones principales:
 
 ### 3.7 Tablero Kanban de Proyectos & Ciclo de Desarrollo
 - **Ruta:** `/dashboard/proyectos`
-- **Servicios:** `ProyectosService`.
-- **Vistas:** Alternancia entre vista **Kanban visual** (columnas: Esperando Anticipo, En Desarrollo, QA/Testing, Entregado) y **Tabla detallada**.
+- **Servicios:** `ProyectosService` ([proyectos.service.ts](file:///d:/Programacion/Github%20WolTeI/WolfTeI-autogestion/src/app/service/proyectos.service.ts)).
+- **Vistas:**
+  1. **Tablero Kanban:** Columnas operativas (Esperando Anticipo, En Desarrollo, QA/Testing, Entregado).
+  2. **Suites & Versiones (Carpeta de Producto):** Vista jerárquica nucleada por cliente donde cada Proyecto Madre contiene el árbol de sus versiones, actualizaciones de paradigma y módulos nuevos.
+  3. **Tabla Detallada:** Grilla de datos con búsquedas y acciones directas.
+- **Nucleación y Filtro por Cliente:** Selector reactivo en cabecera para filtrar instantáneamente por cliente o visualizar todo el ecosistema.
+- **Transición Automática a Histórico (24hs):** Al mover un proyecto a "Entregado", se estampa la marca temporal `fechaEntrega`. Si transcurrieron más de 24 horas (al día siguiente), el sistema lo archiva automáticamente enviándolo al Histórico. En la tarjeta se muestra el aviso con las horas transcurridas y la opción de forzar el archivo inmediato.
+- **Jerarquía de Proyectos Madre & Versiones Evolutivas:**
+  - Posibilidad de crear iteraciones evolutivas bajo un mismo desarrollo base mediante el diálogo modal `NuevaVersionDialogComponent`.
+  - Soporta categorización por `tipoEvolucion` (*actualizacion_paradigma*, *modulo_nuevo*, *migracion*, *mantenimiento*), `versionTag` (ej: v1.0, v2.0 Cloud Backend) y `changelog` explicativo.
 - **Control de Anticipo Obligatorio:** El proyecto entra primero en `Esperando Anticipo 50%` hasta registrar el cobro inicial para proteger el flujo de caja.
 - **Cronómetro / SLA de Entrega en Vivo:** Cada tarjeta calcula automáticamente los días transcurridos contra el plazo contractual pactado en la cotización (*"Día X de Yd (Z%)"*), cambiando a advertencia visual en los últimos 3 días.
 - **Acciones directas:**
   - Arrastrar o avanzar fases en tiempo real con actualización optimista inmediata (0ms).
   - Al marcar como "Entregado", genera automáticamente el enlace de satisfacción (`reviewToken`) y lo copia al portapapeles.
-  - Menú de documentos legales asociados al proyecto y botón para **Archivar en Histórico** una vez finalizado y con saldo cancelado ($0).
+  - Menú de documentos legales asociados al proyecto y botón para **Archivar en Histórico**.
 
 ### 3.8 Bóveda Segura de Infraestructura (Cifrado AES-256-GCM)
 - **Componente:** `BovedaDialogComponent` ([boveda-dialog.component.ts](file:///d:/Programacion/Github%20WolTeI/WolfTeI-autogestion/src/app/views/dashboard/proyectos/boveda-dialog/boveda-dialog.component.ts)).

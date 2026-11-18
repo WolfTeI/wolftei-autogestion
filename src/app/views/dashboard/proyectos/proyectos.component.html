@@ -4,19 +4,35 @@
       <mat-icon class="page-icon">account_tree</mat-icon>
       <div>
         <h1>Gestión de Proyectos</h1>
-        <p class="subtitle">Evolución de desarrollos activos y encuestas de satisfacción</p>
+        <p class="subtitle">Evolución de desarrollos activos, suites de versiones y transiciones automáticas</p>
       </div>
     </div>
 
-    <!-- Toggle de Vistas -->
-    <mat-button-toggle-group [(value)]="vistaModo" aria-label="Modo de vista">
-      <mat-button-toggle value="kanban">
-        <mat-icon>view_kanban</mat-icon> Tablero
-      </mat-button-toggle>
-      <mat-button-toggle value="tabla">
-        <mat-icon>table_chart</mat-icon> Lista
-      </mat-button-toggle>
-    </mat-button-toggle-group>
+    <!-- Controles de Filtro y Toggle de Vistas -->
+    <div class="header-controls">
+      <mat-form-field appearance="outline" class="client-filter-select" subscriptSizing="dynamic">
+        <mat-label>Filtrar por Cliente</mat-label>
+        <mat-icon matPrefix>person</mat-icon>
+        <mat-select [value]="clienteFiltroId()" (selectionChange)="cambiarFiltroCliente($event.value)">
+          <mat-option value="todos">Todos los Clientes</mat-option>
+          @for (cli of clientes(); track cli.id) {
+            <mat-option [value]="cli.id">{{ cli.name }} {{ cli.company ? '(' + cli.company + ')' : '' }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-button-toggle-group [(value)]="vistaModo" aria-label="Modo de vista">
+        <mat-button-toggle value="kanban">
+          <mat-icon>view_kanban</mat-icon> Tablero
+        </mat-button-toggle>
+        <mat-button-toggle value="carpeta">
+          <mat-icon>folder_special</mat-icon> Suites & Versiones
+        </mat-button-toggle>
+        <mat-button-toggle value="tabla">
+          <mat-icon>table_chart</mat-icon> Lista
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
   </div>
 
   @if (isLoading()) {
@@ -51,8 +67,14 @@
               @for (p of proyectosPorEstado(col.id); track p.id) {
                 <mat-card class="kanban-card">
                   <div class="card-top">
-                    <span class="card-phase">{{ p.currentPhase || 'Fase Inicial' }}</span>
-                    <button mat-icon-button [matMenuTriggerFor]="cardMenu" class="more-btn" matTooltip="Cambiar fase">
+                    <div class="phase-and-version">
+                      <span class="card-phase">{{ p.currentPhase || 'Fase Inicial' }}</span>
+                      @if (p.versionTag) {
+                        <span class="version-tag-badge">{{ p.versionTag }}</span>
+                      }
+                    </div>
+
+                    <button mat-icon-button [matMenuTriggerFor]="cardMenu" class="more-btn" matTooltip="Opciones del proyecto">
                       <mat-icon>more_vert</mat-icon>
                     </button>
                     <mat-menu #cardMenu="matMenu">
@@ -66,6 +88,10 @@
                         }
                       }
                       <mat-divider></mat-divider>
+                      <button mat-menu-item (click)="abrirNuevaVersionDialog(p)">
+                        <mat-icon style="color: #3b82f6;">add_to_photos</mat-icon>
+                        Crear Nueva Versión / Módulo
+                      </button>
                       <button mat-menu-item (click)="abrirEditarCliente(p)">
                         <mat-icon style="color: #60a5fa;">person</mat-icon>
                         Completar / Editar Cliente
@@ -76,6 +102,13 @@
                       </button>
                     </mat-menu>
                   </div>
+
+                  @if (p.parentProjectTitle) {
+                    <div class="suite-crumb">
+                      <mat-icon>folder_open</mat-icon>
+                      <span>Suite: {{ p.parentProjectTitle }}</span>
+                    </div>
+                  }
 
                   <h3 class="card-title">{{ p.title }}</h3>
 
@@ -98,6 +131,15 @@
                     <mat-icon>{{ sla.esAlerta ? 'warning' : 'schedule' }}</mat-icon>
                     <span>Día {{ sla.diasTranscurridos }} de {{ sla.diasTotales }}d ({{ sla.porcentaje }}%)</span>
                   </div>
+
+                  <!-- Aviso de entrega y pase automático a Histórico -->
+                  @if (p.status === 'entregado') {
+                    <div class="delivered-notice">
+                      <mat-icon>history_toggle_drop_down</mat-icon>
+                      <span>Entregado hace {{ horasDesdeEntrega(p) }}h · Pasa a Histórico mañana</span>
+                      <button mat-button class="archive-now-btn" (click)="archivarProyecto(p)">Archivar ya</button>
+                    </div>
+                  }
 
                   <div class="card-footer">
                     <span class="card-amount">
@@ -162,6 +204,105 @@
                 </div>
               }
             </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── VISTA SUITES & VERSIONES (CARPETA DE PRODUCTO) ── -->
+    @if (vistaModo === 'carpeta') {
+      <div class="suites-container">
+        @for (grupo of gruposClienteYMadre; track grupo.clientId) {
+          <mat-card class="client-suite-card">
+            <mat-card-header class="client-suite-header">
+              <mat-icon mat-card-avatar style="color: #60a5fa;">business</mat-icon>
+              <mat-card-title>
+                <a [routerLink]="['/dashboard/clientes', grupo.clientId]" class="client-link-header">
+                  {{ grupo.clientName }}
+                </a>
+                @if (grupo.clientCompany) {
+                  <small class="company-text"> ({{ grupo.clientCompany }})</small>
+                }
+              </mat-card-title>
+              <mat-card-subtitle>{{ grupo.suites.length }} suite(s) de desarrollo registradas</mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-divider></mat-divider>
+
+            <mat-card-content class="suites-list">
+              @for (suite of grupo.suites; track suite.madre.id) {
+                <div class="product-folder">
+                  <!-- Cabecera del Proyecto Madre -->
+                  <div class="folder-header">
+                    <div class="folder-title-box">
+                      <mat-icon class="folder-icon">folder</mat-icon>
+                      <div>
+                        <h3 class="folder-name">{{ suite.madre.title }}</h3>
+                        <p class="folder-desc">{{ suite.madre.description || 'Sin descripción' }}</p>
+                      </div>
+                    </div>
+
+                    <div class="folder-actions">
+                      <span class="version-tag-badge">{{ suite.madre.versionTag || 'v1.0 Base' }}</span>
+                      <mat-chip [color]="getStatusColor(suite.madre.status)" selected>
+                        {{ suite.madre.status | uppercase }}
+                      </mat-chip>
+                      <button mat-stroked-button color="primary" class="btn-sm" (click)="abrirNuevaVersionDialog(suite.madre)">
+                        <mat-icon>add_to_photos</mat-icon>
+                        Nueva Versión / Módulo
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Iteraciones / Módulos de esta Suite -->
+                  @if (suite.versiones.length > 0) {
+                    <div class="sub-versions-tree">
+                      <div class="tree-line"></div>
+                      <div class="versions-cards">
+                        @for (sub of suite.versiones; track sub.id) {
+                          <div class="version-sub-card">
+                            <div class="sub-header">
+                              <div class="sub-title">
+                                <mat-icon>account_tree</mat-icon>
+                                <strong>{{ sub.title }}</strong>
+                                <span class="version-tag-badge">{{ sub.versionTag || 'Actualización' }}</span>
+                                <span class="evo-type-chip">{{ sub.tipoEvolucion || 'modulo_nuevo' }}</span>
+                              </div>
+                              <mat-chip [color]="getStatusColor(sub.status)" selected>
+                                {{ sub.status | uppercase }}
+                              </mat-chip>
+                            </div>
+
+                            @if (sub.changelog) {
+                              <p class="sub-changelog">
+                                <strong>Changelog / Mutación:</strong> {{ sub.changelog }}
+                              </p>
+                            }
+
+                            <div class="sub-footer">
+                              <span class="text-muted">Fase: {{ sub.currentPhase }} · Monto: {{ sub.totalAmount }} {{ sub.currency }}</span>
+                              @if (sub.status !== 'entregado') {
+                                <button mat-button color="accent" (click)="entregarProyecto(sub)">
+                                  <mat-icon>task_alt</mat-icon> Entregar Versión
+                                </button>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  } @else {
+                    <p class="no-subversions text-muted">
+                      No hay actualizaciones o módulos adicionales vinculados a este desarrollo base todavía.
+                    </p>
+                  }
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        } @empty {
+          <div class="col-empty" style="text-align: center; padding: 40px;">
+            <span>No hay proyectos para el cliente seleccionado.</span>
           </div>
         }
       </div>

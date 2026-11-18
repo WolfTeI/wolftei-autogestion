@@ -1,0 +1,137 @@
+.nuevo-informe-container {
+  padding: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 4px 0;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 14px;
+  }
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-section {
+  border-radius: 12px;
+  overflow: hidden;
+
+  mat-card-header {
+    margin-bottom: 16px;
+  }
+}
+
+.fields-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.field-half {
+  flex: 1 1 calc(50% - 16px);
+  min-width: 260px;
+}
+
+.field-full {
+  width: 100%;
+}
+
+.field-grow {
+  flex: 1 1 auto;
+}
+
+.dynamic-list-container {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    .list-title {
+      font-weight: 600;
+      color: #f1f5f9;
+      font-size: 14px;
+    }
+  }
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dynamic-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  mat-form-field {
+    margin-bottom: -16px;
+  }
+}
+
+.modulos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modulo-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 16px;
+
+  .modulo-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #60a5fa;
+  }
+}
+
+.form-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 60px 0;
+  color: #94a3b8;
+
+  mat-spinner {
+    margin: 0 auto 16px auto;
+  }
+}

@@ -18,6 +18,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { NuevoClienteDialogComponent } from '../../clientes/nuevo-cliente-dialog/nuevo-cliente-dialog.component';
 
 import { PropuestasService, Propuesta } from '../../../../service/propuestas.service';
 import { ClientesService, Cliente } from '../../../../service/clientes.service';
@@ -42,7 +44,8 @@ import { startWith, map } from 'rxjs/operators';
     MatTooltipModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    MatDialogModule
   ],
   templateUrl: './nueva-propuesta.component.html',
   styleUrl: './nueva-propuesta.component.scss',
@@ -55,6 +58,7 @@ export class NuevaPropuestaComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   guardando = false;
   cargandoDatos = false;
@@ -277,6 +281,31 @@ export class NuevaPropuestaComponent implements OnInit {
       this.esEdicion = true;
       this.propuestaId = id;
       this.cargarPropuestaParaEdicion(id);
+    } else {
+      // Detectar si venimos desde un Informe Técnico
+      const stateData = history.state?.fromInforme;
+      if (stateData) {
+        this.form.patchValue({
+          clientId: stateData.clientId || null,
+          clientPreviewName: stateData.clientName || '',
+          clientPreviewEmail: stateData.clientEmail || '',
+          title: stateData.title || '',
+          objective: stateData.objective || '',
+        });
+
+        if (stateData.modules && stateData.modules.length > 0) {
+          this.modulesArray.clear();
+          stateData.modules.forEach((m: any) => {
+            this.modulesArray.push(this.fb.group({
+              name: [m.name, Validators.required],
+              description: [m.description || ''],
+              estimatedHours: [10, [Validators.required, Validators.min(1)]]
+            }));
+          });
+        }
+        this.calcularTotal();
+        this.snackBar.open('📋 Alcances importados desde la Propuesta Técnica.', 'Cerrar', { duration: 4000 });
+      }
     }
   }
 
@@ -389,6 +418,26 @@ export class NuevaPropuestaComponent implements OnInit {
       clientId: cliente.id,
       clientPreviewName: cliente.name,
       clientPreviewEmail: cliente.email
+    });
+  }
+
+  abrirNuevoClienteDialog(): void {
+    const dialogRef = this.dialog.open(NuevoClienteDialogComponent, {
+      width: '560px',
+      disableClose: true,
+      autoFocus: true,
+    });
+
+    dialogRef.afterClosed().subscribe((clienteCreado: Cliente) => {
+      if (clienteCreado) {
+        this.clientes.unshift(clienteCreado);
+        this.form.patchValue({
+          clientId: clienteCreado.id,
+          clientPreviewName: clienteCreado.name,
+          clientPreviewEmail: clienteCreado.email || '',
+        });
+        this.snackBar.open(`✅ Cliente "${clienteCreado.name}" registrado y seleccionado.`, 'Cerrar', { duration: 3500 });
+      }
     });
   }
 
@@ -536,6 +585,14 @@ export class NuevaPropuestaComponent implements OnInit {
     // El control de autocomplete puede dejar un objeto, aseguramos que sea string
     if (typeof payload.clientPreviewName === 'object') {
       payload.clientPreviewName = payload.clientPreviewName.name;
+    }
+
+    // Si no tiene clientId pero el nombre coincide con un cliente existente, lo vinculamos
+    if (!payload.clientId && payload.clientPreviewName) {
+      const match = this.clientes.find(c => c.name.trim().toLowerCase() === payload.clientPreviewName.trim().toLowerCase());
+      if (match?.id) {
+        payload.clientId = match.id;
+      }
     }
 
     // Reempacar pricing en "pricingDetails" con las horas totales sumadas

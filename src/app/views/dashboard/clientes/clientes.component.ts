@@ -11,6 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 import { NuevoClienteDialogComponent } from './nuevo-cliente-dialog/nuevo-cliente-dialog.component';
+import { EditarClienteDialogComponent } from './editar-cliente-dialog/editar-cliente-dialog.component';
 
 @Component({
   selector: 'app-clientes',
@@ -84,6 +85,21 @@ export class ClientesComponent implements OnInit, OnDestroy {
         this.router.navigate(['/dashboard/clientes']);
       }
       if (clienteCreado) {
+        this.cargarClientes();
+      }
+    });
+  }
+
+  abrirEditarClienteDialog(cliente: Cliente): void {
+    const dialogRef = this.dialog.open(EditarClienteDialogComponent, {
+      width: '600px',
+      disableClose: true,
+      autoFocus: true,
+      data: { cliente }
+    });
+
+    dialogRef.afterClosed().subscribe((clienteActualizado) => {
+      if (clienteActualizado) {
         this.cargarClientes();
       }
     });
