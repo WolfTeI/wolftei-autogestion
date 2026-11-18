@@ -14,12 +14,12 @@ import { ActualizacionDialogComponent } from '../views/dashboard/actualizacion-d
 export class UpdaterService {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
-  public currentVersion = signal<string>('0.4.0');
+  public currentVersion = signal<string>('');
 
   constructor() {
     getVersion()
       .then((ver) => this.currentVersion.set(ver))
-      .catch(() => this.currentVersion.set('0.4.0'));
+      .catch(() => this.currentVersion.set('dev'));
   }
 
   /**
@@ -28,17 +28,28 @@ export class UpdaterService {
    */
   async checkForUpdates(silent = true): Promise<void> {
     try {
-      const update = await check();
-      const verActual = this.currentVersion();
+      let verActual = this.currentVersion();
+      if (!verActual) {
+        try {
+          verActual = await getVersion();
+          this.currentVersion.set(verActual);
+        } catch {
+          verActual = 'dev';
+        }
+      }
 
-      if (update?.available) {
+      const update = await check();
+
+      if (update) {
+        // Tauri v2 devuelve null si no hay updates; si devuelve el objeto update, ya sabemos que hay una versión nueva
+        const versionInstalada = update.currentVersion || verActual;
         this.dialog.open(ActualizacionDialogComponent, {
           width: '520px',
           disableClose: true,
           panelClass: 'custom-dark-dialog',
           data: {
             update,
-            currentVersion: verActual,
+            currentVersion: versionInstalada,
           },
         });
       } else if (!silent) {
