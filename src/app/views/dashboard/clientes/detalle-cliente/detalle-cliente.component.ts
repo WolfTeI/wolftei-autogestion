@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ClientesService, Cliente } from '../../../../service/clientes.service';
 import { ProyectosService, Proyecto } from '../../../../service/proyectos.service';
 import { PropuestasService, Propuesta } from '../../../../service/propuestas.service';
@@ -18,6 +18,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../../../../utils/contract-pdf-generator';
 import { EditarClienteDialogComponent } from '../editar-cliente-dialog/editar-cliente-dialog.component';
+import { EliminarClienteDialogComponent } from '../eliminar-cliente-dialog/eliminar-cliente-dialog.component';
 
 @Component({
   selector: 'app-detalle-cliente',
@@ -42,6 +43,7 @@ import { EditarClienteDialogComponent } from '../editar-cliente-dialog/editar-cl
 })
 export class DetalleClienteComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private location = inject(Location);
   private clientesService = inject(ClientesService);
   private proyectosService = inject(ProyectosService);
@@ -162,5 +164,35 @@ export class DetalleClienteComponent implements OnInit {
       case 'esperando_anticipo': return 'warn';
       default: return '';
     }
+  }
+
+  confirmarEliminarCliente(): void {
+    const cli = this.cliente();
+    if (!cli || !cli.id) return;
+
+    const dialogRef = this.dialog.open(EliminarClienteDialogComponent, {
+      width: '450px',
+      disableClose: true,
+      data: { cliente: cli }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmado) => {
+      if (confirmado && cli.id) {
+        this.clientesService.eliminarCliente(cli.id).subscribe({
+          next: () => {
+            this.snackBar.open(`🗑️ Cliente "${cli.name}" eliminado correctamente.`, 'Entendido', {
+              duration: 3500
+            });
+            this.router.navigate(['/dashboard/clientes']);
+          },
+          error: (err) => {
+            console.error('Error al eliminar cliente:', err);
+            this.snackBar.open('Error al eliminar el cliente. Intentá nuevamente.', 'Cerrar', {
+              duration: 4000
+            });
+          }
+        });
+      }
+    });
   }
 }

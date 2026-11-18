@@ -9,9 +9,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subscription } from 'rxjs';
 import { NuevoClienteDialogComponent } from './nuevo-cliente-dialog/nuevo-cliente-dialog.component';
 import { EditarClienteDialogComponent } from './editar-cliente-dialog/editar-cliente-dialog.component';
+import { EliminarClienteDialogComponent } from './eliminar-cliente-dialog/eliminar-cliente-dialog.component';
 
 @Component({
   selector: 'app-clientes',
@@ -25,7 +27,8 @@ import { EditarClienteDialogComponent } from './editar-cliente-dialog/editar-cli
     MatProgressSpinnerModule,
     MatCardModule,
     MatTooltipModule,
-    MatDialogModule
+    MatDialogModule,
+    MatSnackBarModule,
   ],
   templateUrl: './clientes.component.html',
   styleUrls: ['./clientes.component.scss']
@@ -35,6 +38,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
   private sub?: Subscription;
 
   clientes = signal<Cliente[]>([]);
@@ -107,5 +111,32 @@ export class ClientesComponent implements OnInit, OnDestroy {
 
   verDetalle(id: string) {
     this.router.navigate(['/dashboard/clientes', id]);
+  }
+
+  confirmarEliminarCliente(cliente: Cliente): void {
+    const dialogRef = this.dialog.open(EliminarClienteDialogComponent, {
+      width: '450px',
+      disableClose: true,
+      data: { cliente }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmado) => {
+      if (confirmado && cliente.id) {
+        this.clientesService.eliminarCliente(cliente.id).subscribe({
+          next: () => {
+            this.snackBar.open(`🗑️ Cliente "${cliente.name}" eliminado correctamente.`, 'Entendido', {
+              duration: 3500
+            });
+            this.cargarClientes();
+          },
+          error: (err) => {
+            console.error('Error al eliminar cliente:', err);
+            this.snackBar.open('Error al eliminar el cliente. Intentá nuevamente.', 'Cerrar', {
+              duration: 4000
+            });
+          }
+        });
+      }
+    });
   }
 }

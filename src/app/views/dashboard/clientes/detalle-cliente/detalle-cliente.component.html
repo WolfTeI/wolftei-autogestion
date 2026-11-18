@@ -35,6 +35,10 @@
       <mat-icon>edit</mat-icon>
       Editar Datos
     </button>
+    <button mat-stroked-button color="warn" (click)="confirmarEliminarCliente()" style="margin-left: 8px;">
+      <mat-icon>delete</mat-icon>
+      Eliminar
+    </button>
   </div>
 
   @if (isLoading()) {
