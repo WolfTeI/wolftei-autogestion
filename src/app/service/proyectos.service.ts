@@ -449,6 +449,7 @@ export class ProyectosService {
       const snapP = await getDocs(projectsCol);
 
       const clientIdsConEntregas = new Set<string>();
+      const clientNamesConEntregas = new Set<string>();
       const reviewsPublicadas: any[] = [];
 
       snapP.docs.forEach((docSnap) => {
@@ -456,6 +457,9 @@ export class ProyectosService {
         if (p.status === 'entregado' || p.status === 'archivado') {
           if (p.clientId) {
             clientIdsConEntregas.add(p.clientId);
+          }
+          if (p.clientName) {
+            clientNamesConEntregas.add(p.clientName.trim().toLowerCase());
           }
           if (p.reviewCompleted && p.reviewPublicada && p.reviewComment) {
             reviewsPublicadas.push({
@@ -475,7 +479,10 @@ export class ProyectosService {
 
       snapC.docs.forEach((docSnap) => {
         const c = docSnap.data() as any;
-        if (clientIdsConEntregas.has(docSnap.id) && c.logoUrl && typeof c.logoUrl === 'string' && c.logoUrl.trim()) {
+        const nombreLower = (c.name || '').trim().toLowerCase();
+        const tieneEntrega = clientIdsConEntregas.has(docSnap.id) || (nombreLower && clientNamesConEntregas.has(nombreLower));
+
+        if (tieneEntrega && c.logoUrl && typeof c.logoUrl === 'string' && c.logoUrl.trim()) {
           // EXCLUSIVAMENTE el logo de la empresa, sin nombres ni datos personales
           logos.push({
             id: docSnap.id,
@@ -492,6 +499,10 @@ export class ProyectosService {
         updatedAt: new Date().toISOString(),
       }, { merge: true });
 
+      console.log('✅ Vitrina pública sincronizada exitosamente:', {
+        totalLogos: logos.length,
+        totalReviews: reviewsPublicadas.length,
+      });
     } catch (e) {
       console.warn('Error al sincronizar vitrina pública:', e);
     }
@@ -625,7 +636,7 @@ export class ProyectosService {
         status: 'archivado',
         archivadoFecha: now,
         updatedAt: now,
-      })
+      }).then(() => this.sincronizarVitrinaPublica())
     );
   }
 }

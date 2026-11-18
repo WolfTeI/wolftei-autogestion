@@ -87,6 +87,7 @@ export class ProyectosComponent implements OnInit, OnDestroy {
     this.cargarFiltroClientes();
     this.sincronizarPropuestasAprobadas();
     this.iniciarEscuchaTiempoReal();
+    this.proyectosService.sincronizarVitrinaPublica();
   }
 
   cargarFiltroClientes(): void {

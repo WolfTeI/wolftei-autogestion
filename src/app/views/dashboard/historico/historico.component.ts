@@ -132,6 +132,7 @@ export class HistoricoComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.iniciarEscucha();
+    this.proyectosService.sincronizarVitrinaPublica();
   }
 
   ngOnDestroy(): void {
