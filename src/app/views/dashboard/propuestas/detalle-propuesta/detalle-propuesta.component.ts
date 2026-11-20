@@ -25,6 +25,7 @@ import { generateReceiptPDF } from '../../../../utils/receipt-pdf-generator';
 import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../../../../utils/contract-pdf-generator';
 import { obtenerFirmaActiva } from '../../../../utils/firma-oficial';
 import { LOGO_WOLFTEI_BASE64 } from '../../../../utils/logo-oficial';
+import { BRAND_CONFIG } from '../../../../service/brand.service';
 
 const ESTADOS = [
   { value: 'borrador',      label: 'Borrador',      color: '#888' },
@@ -464,8 +465,8 @@ export class DetallePropuestaComponent implements OnInit {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(150, 150, 200);
-    doc.text('Soluciones de Software & Desarrollo Digital', headerTextX, 22);
-    doc.text('info@wolftei.com.ar  |  wolftei.com.ar', headerTextX, 28);
+    doc.text(BRAND_CONFIG.tagline, headerTextX, 22);
+    doc.text(`${BRAND_CONFIG.email}  |  ${BRAND_CONFIG.website}`, headerTextX, 28);
     y = 50;
 
     addLine('ANEXO I — PROPUESTA TÉCNICA Y PRESUPUESTO', 14, true, [30, 30, 80]);

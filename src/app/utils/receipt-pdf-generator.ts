@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { Pago } from '../service/pagos.service';
 import { obtenerFirmaActiva } from './firma-oficial';
 import { LOGO_WOLFTEI_BASE64 } from './logo-oficial';
+import { BRAND_CONFIG } from '../service/brand.service';
 
 export interface ReceiptData {
   pago: Pago;
@@ -42,8 +43,8 @@ export function generateReceiptPDF(data: ReceiptData): void {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(148, 163, 184); // Slate 400
-  doc.text('Soluciones de Software & Desarrollo Digital', 38, 24);
-  doc.text('info@wolftei.com.ar | wolftei.com.ar', 38, 29);
+  doc.text(BRAND_CONFIG.tagline, 38, 24);
+  doc.text(`${BRAND_CONFIG.email} | ${BRAND_CONFIG.website}`, 38, 29);
 
   // Recuadro de número de recibo (Derecha)
   const boxWidth = 55;

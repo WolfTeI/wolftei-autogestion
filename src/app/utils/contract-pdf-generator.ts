@@ -3,6 +3,7 @@ import { Cliente } from "../service/clientes.service";
 import { Propuesta } from "../service/propuestas.service";
 import { obtenerFirmaActiva } from "./firma-oficial";
 import { LOGO_WOLFTEI_BASE64 } from "./logo-oficial";
+import { BRAND_CONFIG } from "../service/brand.service";
 
 /**
  * Helper para formatear párrafos y saltos de página con jsPDF.
@@ -169,7 +170,7 @@ export function generateContractPDF(
   doc.setFont("helvetica", "normal");
   doc.setTextColor(148, 163, 184);
   doc.text(
-    "WolfTeI — Soluciones de Software & Desarrollo Digital  |  wolftei.com.ar",
+    `${BRAND_CONFIG.name} — ${BRAND_CONFIG.tagline}  |  ${BRAND_CONFIG.website}`,
     38,
     32,
   );

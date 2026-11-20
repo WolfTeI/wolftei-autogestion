@@ -1,10 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { BrandService } from './brand.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WhatsAppService {
+  private brand = inject(BrandService);
 
   /**
    * Limpia y formatea un número telefónico para la API de WhatsApp (wa.me).
@@ -87,7 +89,7 @@ Tiene una validez de *${diasValidez} días corridos*. Podés revisar el alcance 
 Cualquier duda o ajuste que quieras hacer, estoy a disposición.
 
 Saludos,
-*WolfTeI* — Soluciones de Software`;
+*${this.brand.brandName()}* — ${this.brand.tagline()}`;
   }
 
   /**
@@ -119,7 +121,7 @@ Te consulto si pudiste revisar la propuesta que te compartimos para *"${proyecto
 Avisame con total tranquilidad si querés que ajustemos algún alcance, módulo o cronograma según las prioridades actuales de tu negocio. ¡Quedo a tu disposición!
 
 Saludos,
-*WolfTeI* — Soluciones de Software`;
+*${this.brand.brandName()}* — ${this.brand.tagline()}`;
   }
 
   /**
@@ -148,7 +150,7 @@ Te comento que han finalizado los 30 días corridos de garantía técnica y sopo
 Si te interesa, avisame y te paso una propuesta simple y a medida.
 
 ¡Un saludo cordial!
-*WolfTeI* — Soluciones de Software`;
+*${this.brand.brandName()}* — ${this.brand.tagline()}`;
   }
 
   /**

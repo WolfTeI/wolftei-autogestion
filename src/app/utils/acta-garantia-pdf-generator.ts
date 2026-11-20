@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { obtenerFirmaActiva } from './firma-oficial';
 import { LOGO_WOLFTEI_BASE64 } from './logo-oficial';
+import { BRAND_CONFIG } from '../service/brand.service';
 
 export interface ActaGarantiaData {
   proyectoTitulo: string;
@@ -53,8 +54,8 @@ export function generateActaGarantiaPDF(data: ActaGarantiaData): void {
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(148, 163, 184); // Slate 400
-  doc.text('Soluciones de Software & Desarrollo Digital', 40, 23);
-  doc.text('info@wolftei.com.ar | wolftei.com.ar', 40, 28);
+  doc.text(BRAND_CONFIG.tagline, 40, 23);
+  doc.text(`${BRAND_CONFIG.email} | ${BRAND_CONFIG.website}`, 40, 28);
 
   // Recuadro de Título Documental (Derecha)
   const boxWidth = 65;
@@ -219,7 +220,7 @@ export function generateActaGarantiaPDF(data: ActaGarantiaData): void {
   doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);
   doc.text(
-    'WolfTeI — Soluciones de Software | Documento oficial de constancia de entrega de desarrollo y garantía técnica.',
+    `${BRAND_CONFIG.name} — ${BRAND_CONFIG.tagline} | Documento oficial de constancia de entrega de desarrollo y garantía técnica.`,
     pageWidth / 2,
     285,
     { align: 'center' }
