@@ -4,14 +4,14 @@
       <mat-icon>arrow_back</mat-icon>
     </button>
     <div>
-      <h1>{{ esEdicion ? 'Editar Propuesta Técnica' : 'Nueva Propuesta Técnica & Diagnóstico' }}</h1>
+      <h1>{{ esEdicion() ? 'Editar Propuesta Técnica' : 'Nueva Propuesta Técnica & Diagnóstico' }}</h1>
       <p class="subtitle">
-        {{ esEdicion ? 'Ajustá el informe de problemática y solución técnica' : 'Elaborá el diagnóstico, solución y visión de valor antes de enviar números fríos' }}
+        {{ esEdicion() ? 'Ajustá el informe de problemática y solución técnica' : 'Elaborá el diagnóstico, solución y visión de valor antes de enviar números fríos' }}
       </p>
     </div>
   </div>
 
-  @if (cargandoDatos) {
+  @if (cargandoDatos()) {
     <div class="loading-state">
       <mat-spinner diameter="44"></mat-spinner>
       <p>Cargando datos del informe...</p>
@@ -299,9 +299,9 @@
             Cancelar
           </button>
 
-          <button type="submit" mat-flat-button color="primary" [disabled]="guardando">
+          <button type="submit" mat-flat-button color="primary" [disabled]="guardando()">
             <mat-icon>save</mat-icon>
-            {{ esEdicion ? 'Guardar Cambios' : 'Generar Propuesta Técnica' }}
+            {{ esEdicion() ? 'Guardar Cambios' : 'Generar Propuesta Técnica' }}
           </button>
         </mat-card-content>
       </mat-card>

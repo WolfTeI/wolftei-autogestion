@@ -27,6 +27,16 @@
           Descargar PDF
         </button>
 
+        <button mat-stroked-button (click)="copiarLink()" matTooltip="Copiar enlace para ver en la web">
+          <mat-icon>link</mat-icon>
+          Copiar Link
+        </button>
+
+        <button mat-stroked-button (click)="verEnLaWeb()" matTooltip="Abrir propuesta técnica en el navegador">
+          <mat-icon>open_in_new</mat-icon>
+          Ver en la Web
+        </button>
+
         @if (inf.clientPhone) {
           <button mat-stroked-button (click)="compartirWhatsApp()" style="color: #10b981; border-color: rgba(16, 185, 129, 0.4);">
             <mat-icon style="color: #10b981;">chat</mat-icon>

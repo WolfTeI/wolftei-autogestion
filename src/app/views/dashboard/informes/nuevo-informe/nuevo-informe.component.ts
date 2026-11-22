@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import {
@@ -20,7 +20,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
-import { startWith, map } from 'rxjs/operators';
+import { startWith, map, timeout } from 'rxjs/operators';
 
 import { InformesTecnicosService, InformeTecnico } from '../../../../service/informes-tecnicos.service';
 import { ClientesService, Cliente } from '../../../../service/clientes.service';
@@ -56,10 +56,11 @@ export class NuevoInformeComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
 
-  guardando = false;
-  cargandoDatos = false;
-  esEdicion = false;
+  guardando = signal<boolean>(false);
+  cargandoDatos = signal<boolean>(false);
+  esEdicion = signal<boolean>(false);
   informeId: string | null = null;
 
   clientes: Cliente[] = [];
@@ -143,7 +144,7 @@ export class NuevoInformeComponent implements OnInit {
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.esEdicion = true;
+      this.esEdicion.set(true);
       this.informeId = id;
       this.cargarInforme(id);
     }
@@ -209,74 +210,83 @@ export class NuevoInformeComponent implements OnInit {
   }
 
   cargarInforme(id: string): void {
-    this.cargandoDatos = true;
-    this.informesService.getInforme(id).subscribe({
-      next: (inf) => {
-        this.cargandoDatos = false;
+    this.cargandoDatos.set(true);
+    this.informesService
+      .getInforme(id)
+      .pipe(timeout(8000))
+      .subscribe({
+        next: (inf) => {
+          try {
+            // Cargar problemas
+            this.problemasArray.clear();
+            if (inf.problemasDetectados?.length) {
+              inf.problemasDetectados.forEach((p) => this.problemasArray.push(this.fb.control(p, Validators.required)));
+            } else {
+              this.problemasArray.push(this.fb.control(''));
+            }
 
-        // Cargar problemas
-        this.problemasArray.clear();
-        if (inf.problemasDetectados?.length) {
-          inf.problemasDetectados.forEach((p) => this.problemasArray.push(this.fb.control(p, Validators.required)));
-        } else {
-          this.problemasArray.push(this.fb.control(''));
-        }
+            // Cargar módulos
+            this.modulosArray.clear();
+            if (inf.modulosSolucion?.length) {
+              inf.modulosSolucion.forEach((m) => {
+                this.modulosArray.push(
+                  this.fb.group({
+                    titulo: [m.titulo, Validators.required],
+                    descripcion: [m.descripcion, Validators.required],
+                    impactoOValor: [m.impactoOValor || ''],
+                    tiempoEstimadoSugerido: [m.tiempoEstimadoSugerido || ''],
+                  })
+                );
+              });
+            } else {
+              this.modulosArray.push(this.nuevoModuloSolucion());
+            }
 
-        // Cargar módulos
-        this.modulosArray.clear();
-        if (inf.modulosSolucion?.length) {
-          inf.modulosSolucion.forEach((m) => {
-            this.modulosArray.push(
-              this.fb.group({
-                titulo: [m.titulo, Validators.required],
-                descripcion: [m.descripcion, Validators.required],
-                impactoOValor: [m.impactoOValor || ''],
-                tiempoEstimadoSugerido: [m.tiempoEstimadoSugerido || ''],
-              })
-            );
-          });
-        } else {
-          this.modulosArray.push(this.nuevoModuloSolucion());
-        }
+            // Cargar beneficios
+            this.beneficiosArray.clear();
+            if (inf.beneficiosClave?.length) {
+              inf.beneficiosClave.forEach((b) => this.beneficiosArray.push(this.fb.control(b)));
+            } else {
+              this.beneficiosArray.push(this.fb.control(''));
+            }
 
-        // Cargar beneficios
-        this.beneficiosArray.clear();
-        if (inf.beneficiosClave?.length) {
-          inf.beneficiosClave.forEach((b) => this.beneficiosArray.push(this.fb.control(b)));
-        } else {
-          this.beneficiosArray.push(this.fb.control(''));
-        }
-
-        this.form.patchValue({
-          clientId: inf.clientId || null,
-          clientName: inf.clientName || '',
-          clientCompany: inf.clientCompany || '',
-          clientEmail: inf.clientEmail || '',
-          clientPhone: inf.clientPhone || '',
-          title: inf.title || '',
-          situacionActual: inf.situacionActual || '',
-          resumenSolucion: inf.resumenSolucion || '',
-          prospectoFuturo: inf.prospectoFuturo || '',
-          tecnologiasRecomendadas: inf.tecnologiasRecomendadas || '',
-          status: inf.status || 'borrador',
-        });
-      },
-      error: (err) => {
-        this.cargandoDatos = false;
-        console.error('Error al cargar informe:', err);
-        this.snackBar.open('Error al cargar el informe.', 'Cerrar', { duration: 3000 });
-        this.router.navigate(['/dashboard/informes']);
-      },
-    });
+            this.form.patchValue({
+              clientId: inf.clientId || null,
+              clientName: inf.clientName || '',
+              clientCompany: inf.clientCompany || '',
+              clientEmail: inf.clientEmail || '',
+              clientPhone: inf.clientPhone || '',
+              title: inf.title || '',
+              situacionActual: inf.situacionActual || '',
+              resumenSolucion: inf.resumenSolucion || '',
+              prospectoFuturo: inf.prospectoFuturo || '',
+              tecnologiasRecomendadas: inf.tecnologiasRecomendadas || '',
+              status: inf.status || 'borrador',
+            });
+          } catch (err) {
+            console.error('Error al procesar datos del informe:', err);
+          } finally {
+            this.cargandoDatos.set(false);
+            this.cdr.markForCheck();
+          }
+        },
+        error: (err) => {
+          this.cargandoDatos.set(false);
+          this.cdr.markForCheck();
+          console.error('Error al cargar informe:', err);
+          this.snackBar.open('No se pudo cargar el informe o la conexión tardó demasiado.', 'Cerrar', { duration: 3500 });
+          this.router.navigate(['/dashboard/informes']);
+        },
+      });
   }
 
   guardar(): void {
-    if (this.form.invalid || this.guardando) {
+    if (this.form.invalid || this.guardando()) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.guardando = true;
+    this.guardando.set(true);
     const val = { ...this.form.value };
 
     if (typeof val.clientName === 'object') {
@@ -295,15 +305,15 @@ export class NuevoInformeComponent implements OnInit {
     val.problemasDetectados = (val.problemasDetectados || []).filter((p: string) => p?.trim());
     val.beneficiosClave = (val.beneficiosClave || []).filter((b: string) => b?.trim());
 
-    if (this.esEdicion && this.informeId) {
+    if (this.esEdicion() && this.informeId) {
       this.informesService.actualizarInforme(this.informeId, val).subscribe({
         next: () => {
-          this.guardando = false;
+          this.guardando.set(false);
           this.snackBar.open('✅ Propuesta Técnica actualizada exitosamente.', 'Cerrar', { duration: 3500 });
           this.router.navigate(['/dashboard/informes', this.informeId]);
         },
         error: (err) => {
-          this.guardando = false;
+          this.guardando.set(false);
           console.error(err);
           this.snackBar.open('Error al actualizar el informe.', 'Cerrar', { duration: 3000 });
         },
@@ -311,13 +321,13 @@ export class NuevoInformeComponent implements OnInit {
     } else {
       this.informesService.crearInforme(val).subscribe({
         next: (resp) => {
-          this.guardando = false;
+          this.guardando.set(false);
           this.snackBar.open(`✅ Propuesta Técnica creada con éxito (Ref: ${resp.token}).`, 'Ver Detalle', { duration: 4000 })
             .onAction().subscribe(() => this.router.navigate(['/dashboard/informes', resp.id]));
           this.router.navigate(['/dashboard/informes', resp.id]);
         },
         error: (err) => {
-          this.guardando = false;
+          this.guardando.set(false);
           console.error(err);
           this.snackBar.open('Error al crear el informe.', 'Cerrar', { duration: 3000 });
         },

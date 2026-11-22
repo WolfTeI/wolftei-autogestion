@@ -2,71 +2,75 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regla global de denegación por defecto (Principio de Menor Privilegio - OWASP A01)
+    // 1. Denegar todo por defecto (Principio de Menor Privilegio - OWASP A01 / ISO 27001)
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Colección de Propuestas Comerciales
+    // 2. Presupuestos y Propuestas Comerciales
     match /proposals/{proposalId} {
-      // Lectura permitida si está autenticado en Autogestión, o lectura pública por token
+      // Lectura para operadores autenticados o cliente mediante token público
       allow read: if request.auth != null || resource.data.token != null;
-      // Creación, edición general y eliminación restringidas a operadores autenticados
       allow create, delete: if request.auth != null;
-      // Edición: autenticado O cliente aceptando la propuesta puntualmente
+      // Actualización: operador autenticado O cliente aceptando formalmente con sus datos fiscales
       allow update: if request.auth != null 
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedAt', 'clientLegalName', 'clientTaxId', 'clientAddress', 'clientEmail', 'updatedAt'])
             && request.resource.data.status == 'aceptado');
     }
 
-    // Colección de Propuestas Técnicas & Informes Diagnósticos
+    // 3. Informes Técnicos y Diagnósticos de Problemáticas (Nuevo Módulo)
     match /technical_proposals/{informeId} {
+      // Lectura para operadores autenticados o cliente mediante token seguro CSPRNG
       allow read: if request.auth != null || resource.data.token != null;
+      // Creación, edición y eliminación exclusiva para operadores autenticados
       allow create, update, delete: if request.auth != null;
     }
 
-    // Directorio de Clientes (CRM) - Privado
+    // 4. Directorio de Clientes (CRM) - Estrictamente privado (Aislamiento de PII)
     match /clients/{clientId} {
       allow read, write: if request.auth != null;
     }
 
-    // Tablero de Proyectos - Privado con excepción de encuestas públicas
+    // 5. Tablero de Proyectos y Encuestas de Satisfacción
     match /projects/{projectId} {
+      // Lectura para operadores o cliente consultando su token de reseña
       allow read: if request.auth != null || resource.data.reviewToken != null;
       allow create, delete: if request.auth != null;
+      // El cliente público solo puede enviar o actualizar su valoración y comentario
       allow update: if request.auth != null 
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reviewCompleted', 'reviewStars', 'reviewComment', 'updatedAt']));
     }
 
-    // Registro de Cobranzas y Pagos - Estrictamente privado
+    // 6. Vitrina Pública Institucional (Logos de empresas entregadas y Testimonios aprobados)
+    match /showcase/{docId} {
+      // Lectura pública abierta para wolftei.com.ar (cero PII expuesta)
+      allow read: if true;
+      // Solo el CRM de Autogestión sincroniza los datos aprobados
+      allow write: if request.auth != null;
+    }
+
+    // 7. Cobranzas y Pagos - Estrictamente confidencial
     match /payments/{paymentId} {
       allow read, write: if request.auth != null;
     }
 
-    // Mensajes de Contacto Web
+    // 8. Mensajes de Contacto Web
     match /contacto/{messageId} {
-      // Permite envío público desde la web
+      // Creación pública validando tipos mínimos de datos
       allow create: if request.resource.data.email is string 
                     && request.resource.data.name is string 
                     && request.resource.data.message is string;
-      // Solo el panel de Autogestión autenticado puede leer y borrar mensajes
       allow read, delete: if request.auth != null;
       allow update: if false;
     }
 
-    // Configuración comercial del sitio (Settings)
+    // 9. Configuración General del Sitio (Settings)
     match /settings/{settingId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Vitrina pública institucional (Logos de empresas con proyectos entregados y Reseñas)
-    match /showcase/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    // Usuarios y lista blanca de acceso (RBAC)
+    // 10. Usuarios y Lista Blanca de Operadores (RBAC)
     match /usuarios/{userId} {
       allow read: if request.auth != null;
       allow write: if false; // Solo administradores desde Firebase Console

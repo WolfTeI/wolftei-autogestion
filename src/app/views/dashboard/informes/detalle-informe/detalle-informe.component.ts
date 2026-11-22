@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { InformesTecnicosService, InformeTecnico } from '../../../../service/informes-tecnicos.service';
 import { WhatsAppService } from '../../../../service/whatsapp.service';
 import { generateInformePDF } from '../../../../utils/informe-pdf-generator';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 @Component({
   selector: 'app-detalle-informe',
@@ -71,6 +72,32 @@ export class DetalleInformeComponent implements OnInit {
     this.snackBar.open('📄 PDF de la Propuesta Técnica generado.', 'Cerrar', { duration: 3000 });
   }
 
+  copiarLink(): void {
+    const inf = this.informe();
+    if (!inf?.token) {
+      this.snackBar.open('⚠️ Esta propuesta no tiene token público generado.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    const link = `https://wolftei.com.ar/informe/${inf.token}`;
+    navigator.clipboard.writeText(link).then(() => {
+      this.snackBar.open('🔗 Enlace web copiado al portapapeles.', 'Entendido', { duration: 3000 });
+    });
+  }
+
+  async verEnLaWeb(): Promise<void> {
+    const inf = this.informe();
+    if (!inf?.token) {
+      this.snackBar.open('⚠️ Esta propuesta no tiene token público generado.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    const link = `https://wolftei.com.ar/informe/${inf.token}`;
+    try {
+      await openUrl(link);
+    } catch {
+      window.open(link, '_blank');
+    }
+  }
+
   async compartirWhatsApp(): Promise<void> {
     const inf = this.informe();
     if (!inf?.clientPhone) {
@@ -78,9 +105,11 @@ export class DetalleInformeComponent implements OnInit {
       return;
     }
 
+    const linkWeb = inf.token ? `\n\n🔗 *Ver Propuesta Online:* https://wolftei.com.ar/informe/${inf.token}` : '';
     const mensaje =
-      `¡Hola ${inf.clientName}! Te comparto el Informe Técnico y Propuesta de Solución sobre "${inf.title}". ` +
-      `Quedamos atentos a tus comentarios y dudas.`;
+      `¡Hola ${inf.clientName}! Te comparto el Diagnóstico y Propuesta Técnica sobre *"${inf.title}"*.${linkWeb}\n\n` +
+      `Quedamos atentos a tus comentarios y dudas.\n\n` +
+      `Saludos,\n*WolfTeI* — Soluciones Digitales`;
 
     await this.whatsappService.abrirChat(inf.clientPhone, mensaje);
   }
