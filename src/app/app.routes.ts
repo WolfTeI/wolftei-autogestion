@@ -122,6 +122,13 @@ export const routes: Routes = [
             (m) => m.ProyectosComponent,
           ),
       },
+      {
+        path: 'proyectos/:id',
+        loadComponent: () =>
+          import('./views/dashboard/proyectos/detalle-proyecto/detalle-proyecto.component').then(
+            (m) => m.DetalleProyectoComponent,
+          ),
+      },
       // ── Finanzas, Cobranzas y Reseñas ──
       {
         path: 'finanzas',

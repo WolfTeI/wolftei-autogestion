@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -64,6 +65,7 @@ export class HistoricoComponent implements OnInit, OnDestroy {
   private whatsAppService = inject(WhatsAppService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
   private sub?: Subscription;
@@ -226,5 +228,11 @@ export class HistoricoComponent implements OnInit, OnDestroy {
         this.snackBar.open('Error al reactivar el proyecto.', 'Cerrar', { duration: 3000 });
       },
     });
+  }
+
+  verFichaCompleta(p: ProyectoHistoricoView): void {
+    if (p.id) {
+      this.router.navigate(['/dashboard/proyectos', p.id]);
+    }
   }
 }

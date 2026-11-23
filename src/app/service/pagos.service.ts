@@ -5,9 +5,11 @@ import {
   doc,
   getDocs,
   addDoc,
+  updateDoc,
   deleteDoc,
   query,
   where,
+  limit,
   orderBy,
   onSnapshot,
 } from 'firebase/firestore';
@@ -75,6 +77,43 @@ export class PagosService {
 
     const docRef = await addDoc(colRef, payload);
     const nuevoPago: Pago = { id: docRef.id, ...payload };
+
+    // Sincronización automática de estado en Proyectos
+    if (pago.propuestaId || pago.clientId) {
+      try {
+        const projCol = collection(this.firebaseService.db, 'projects');
+        let snapProj;
+        if (pago.propuestaId) {
+          const qProj = query(projCol, where('propuestaId', '==', pago.propuestaId), limit(1));
+          snapProj = await getDocs(qProj);
+        }
+        if ((!snapProj || snapProj.empty) && pago.clientId) {
+          const qProj = query(projCol, where('clientId', '==', pago.clientId), limit(1));
+          snapProj = await getDocs(qProj);
+        }
+
+        if (snapProj && !snapProj.empty) {
+          const projDoc = snapProj.docs[0];
+          const projData = projDoc.data();
+          const updatePayload: any = { updatedAt: now };
+
+          if (pago.concept === 'anticipo' || pago.concept === 'total') {
+            updatePayload.anticipoCobrado = true;
+            if (projData['status'] === 'esperando_anticipo') {
+              updatePayload.status = 'en_progreso';
+              updatePayload.currentPhase = 'Desarrollo';
+            }
+          }
+          if (pago.concept === 'saldo' || pago.concept === 'total') {
+            updatePayload.saldoCobrado = true;
+          }
+
+          await updateDoc(doc(this.firebaseService.db, 'projects', projDoc.id), updatePayload);
+        }
+      } catch (errSync) {
+        console.warn('No se pudo auto-sincronizar proyecto tras pago:', errSync);
+      }
+    }
 
     return {
       id: docRef.id,

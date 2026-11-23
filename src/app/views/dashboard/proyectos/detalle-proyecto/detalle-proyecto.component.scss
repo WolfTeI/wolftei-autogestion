@@ -1,0 +1,303 @@
+.detalle-proyecto-container {
+  padding: 24px 32px 60px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .loading-shade {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    gap: 16px;
+    color: #94a3b8;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .back-btn {
+        background: rgba(30, 41, 59, 0.6);
+        color: #94a3b8;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        &:hover {
+          color: #fff;
+          background: rgba(59, 130, 246, 0.2);
+        }
+      }
+
+      .title-info {
+        h1 {
+          font-size: 1.6rem;
+          font-weight: 700;
+          color: #f8fafc;
+          margin: 0 0 4px 0;
+          letter-spacing: -0.02em;
+        }
+
+        .subtitle-line {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          color: #94a3b8;
+          font-size: 0.9rem;
+
+          .client-link {
+            color: #60a5fa;
+            font-weight: 500;
+          }
+
+          .version-badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      .status-badge-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid transparent;
+
+        &.status-esperando_anticipo {
+          background: rgba(245, 158, 11, 0.15);
+          color: #fbbf24;
+          border-color: rgba(245, 158, 11, 0.3);
+        }
+        &.status-en_progreso {
+          background: rgba(59, 130, 246, 0.15);
+          color: #60a5fa;
+          border-color: rgba(59, 130, 246, 0.3);
+        }
+        &.status-testing {
+          background: rgba(139, 92, 246, 0.15);
+          color: #a78bfa;
+          border-color: rgba(139, 92, 246, 0.3);
+        }
+        &.status-entregado {
+          background: rgba(16, 185, 129, 0.15);
+          color: #34d399;
+          border-color: rgba(16, 185, 129, 0.3);
+        }
+        &.status-archivado {
+          background: rgba(148, 163, 184, 0.15);
+          color: #cbd5e1;
+          border-color: rgba(148, 163, 184, 0.3);
+        }
+      }
+    }
+  }
+
+  // Tarjetas métricas superiores
+  .metric-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+
+    .metric-card {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .metric-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        mat-icon {
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
+        }
+
+        &.blue {
+          background: rgba(59, 130, 246, 0.12);
+          color: #60a5fa;
+        }
+        &.green {
+          background: rgba(16, 185, 129, 0.12);
+          color: #34d399;
+        }
+        &.amber {
+          background: rgba(245, 158, 11, 0.12);
+          color: #fbbf24;
+        }
+        &.purple {
+          background: rgba(139, 92, 246, 0.12);
+          color: #c084fc;
+        }
+      }
+
+      .metric-text {
+        display: flex;
+        flex-direction: column;
+
+        .metric-label {
+          font-size: 0.75rem;
+          color: #94a3b8;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 2px;
+        }
+
+        .metric-val {
+          font-size: 1.35rem;
+          font-weight: 700;
+          color: #f8fafc;
+        }
+
+        .metric-sub {
+          font-size: 0.75rem;
+          color: #64748b;
+        }
+      }
+    }
+  }
+
+  // Pestañas
+  .project-tabs {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    overflow: hidden;
+
+    ::ng-deep .mat-mdc-tab-header {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-content {
+      padding: 28px;
+    }
+  }
+
+  // Tarjetas internas de sección
+  .info-card {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 14px;
+
+      mat-icon {
+        color: #3b82f6;
+      }
+    }
+  }
+
+  // Lista de Pagos / Recibos
+  .payments-table {
+    width: 100%;
+    background: transparent;
+
+    th {
+      color: #94a3b8;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
+
+    td {
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      border-bottom-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .receipt-num {
+      color: #818cf8;
+      font-family: monospace;
+      font-weight: 600;
+    }
+
+    .amount-positive {
+      color: #34d399;
+      font-weight: 700;
+    }
+  }
+
+  // Documentos Legales Grid
+  .docs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+
+    .doc-item-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+
+      .doc-icon-title {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        mat-icon {
+          font-size: 28px;
+          width: 28px;
+          height: 28px;
+        }
+
+        h3 {
+          margin: 0 0 4px 0;
+          font-size: 0.95rem;
+          color: #f8fafc;
+        }
+
+        p {
+          margin: 0;
+          font-size: 0.8rem;
+          color: #94a3b8;
+        }
+      }
+    }
+  }
+}

@@ -28,12 +28,10 @@ import { LOGO_WOLFTEI_BASE64 } from '../../../../utils/logo-oficial';
 import { BRAND_CONFIG } from '../../../../service/brand.service';
 
 const ESTADOS = [
-  { value: 'borrador',      label: 'Borrador',      color: '#888' },
+  { value: 'borrador',      label: 'Borrador',      color: '#94a3b8' },
   { value: 'enviado',       label: 'Enviado',        color: '#f59e0b' },
   { value: 'visto',         label: 'Visto',          color: '#3b82f6' },
-  { value: 'aceptado',      label: 'Aceptado',       color: '#10b981' },
-  { value: 'en_desarrollo', label: 'En Desarrollo',  color: '#8b5cf6' },
-  { value: 'finalizado',    label: 'Finalizado',     color: '#6b7280' },
+  { value: 'aceptado',      label: 'Aceptado (En Proyectos)', color: '#10b981' },
   { value: 'cancelado',     label: 'Cancelado',      color: '#ef4444' },
 ];
 
@@ -287,8 +285,30 @@ export class DetallePropuestaComponent implements OnInit {
     });
   }
 
-  getStatusLabel(s: string) { return ESTADOS.find(e => e.value === s)?.label ?? s; }
-  getStatusColor(s: string) { return ESTADOS.find(e => e.value === s)?.color ?? '#888'; }
+  getStatusLabel(s: string) {
+    if (s === 'en_desarrollo' || s === 'finalizado') return 'Aceptado (En Proyectos)';
+    return ESTADOS.find(e => e.value === s)?.label ?? s;
+  }
+  getStatusColor(s: string) {
+    if (s === 'en_desarrollo' || s === 'finalizado') return '#10b981';
+    return ESTADOS.find(e => e.value === s)?.color ?? '#888';
+  }
+
+  irAProyecto() {
+    const p = this.propuesta();
+    if (!p) return;
+    if (p.proyectoId) {
+      this.router.navigate(['/dashboard/proyectos', p.proyectoId]);
+    } else {
+      this.proyectosService.crearOObtenerDesdePropuesta(p).subscribe({
+        next: (res) => {
+          this.propuesta.update(prev => prev ? { ...prev, proyectoId: res.proyecto.id } : prev);
+          this.router.navigate(['/dashboard/proyectos', res.proyecto.id]);
+        },
+        error: () => this.router.navigate(['/dashboard/proyectos'])
+      });
+    }
+  }
 
   editarPropuesta() {
     const p = this.propuesta();
@@ -303,18 +323,18 @@ export class DetallePropuestaComponent implements OnInit {
       next: () => {
         this.propuesta.update(prev => prev ? { ...prev, status: nuevoEstado } : prev);
 
-        // Si se pasa a desarrollo o se acepta, crear/asegurar automáticamente el proyecto en el Kanban
-        if (nuevoEstado === 'en_desarrollo' || nuevoEstado === 'aceptado') {
+        // Si se acepta la propuesta, asegurar automáticamente el proyecto en el Kanban (Esperando Pago)
+        if (nuevoEstado === 'aceptado') {
           this.proyectosService.crearOObtenerDesdePropuesta(p).subscribe({
             next: (res) => {
               this.propuesta.update(prev => prev ? { ...prev, proyectoId: res.proyecto.id } : prev);
               const snack = this.snackBar.open(
-                `🚀 Estado → "${this.getStatusLabel(nuevoEstado)}" y Proyecto activo en Kanban.`,
+                `🚀 Propuesta Aceptada → Proyecto activo en Kanban (Esperando Pago).`,
                 'Ver en Proyectos',
                 { duration: 5000 }
               );
               snack.onAction().subscribe(() => {
-                this.router.navigate(['/dashboard/proyectos']);
+                this.router.navigate(['/dashboard/proyectos', res.proyecto.id]);
               });
             },
             error: (err) => {

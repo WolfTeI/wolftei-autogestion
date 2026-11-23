@@ -639,4 +639,58 @@ export class ProyectosService {
       }).then(() => this.sincronizarVitrinaPublica())
     );
   }
+
+  /**
+   * Rutina de Autocuración y Conciliación Inteligente:
+   * Revisa proyectos en estado 'esperando_anticipo' que ya cuentan con pagos registrados
+   * (de concepto anticipo o total) en la colección 'payments' y los mueve automáticamente
+   * a 'en_progreso' ('En Desarrollo') con anticipoCobrado: true.
+   */
+  async autoHealProyectosConPagos(): Promise<number> {
+    try {
+      const colRef = collection(this.firebaseService.db, this.COLLECTION_NAME);
+      const q = query(colRef, where('status', '==', 'esperando_anticipo'));
+      const snap = await getDocs(q);
+      if (snap.empty) return 0;
+
+      const paymentsCol = collection(this.firebaseService.db, 'payments');
+      let actualizados = 0;
+
+      for (const docSnap of snap.docs) {
+        const proj = docSnap.data() as Proyecto;
+        if (!proj.propuestaId && !proj.clientId) continue;
+
+        let pagosSnap;
+        if (proj.propuestaId) {
+          const qPagos = query(paymentsCol, where('propuestaId', '==', proj.propuestaId));
+          pagosSnap = await getDocs(qPagos);
+        } else {
+          const qPagos = query(paymentsCol, where('clientId', '==', proj.clientId));
+          pagosSnap = await getDocs(qPagos);
+        }
+
+        if (pagosSnap && !pagosSnap.empty) {
+          const docsPagos = pagosSnap.docs.map(d => d.data());
+          const tieneAnticipo = docsPagos.some(p => p['concept'] === 'anticipo' || p['concept'] === 'total');
+          const totalPagado = docsPagos.reduce((acc, curr) => acc + (Number(curr['amount']) || 0), 0);
+
+          if (tieneAnticipo || (proj.totalAmount > 0 && totalPagado >= proj.totalAmount * 0.3)) {
+            const now = new Date().toISOString();
+            await updateDoc(doc(this.firebaseService.db, this.COLLECTION_NAME, docSnap.id), {
+              status: 'en_progreso',
+              currentPhase: 'Desarrollo',
+              anticipoCobrado: true,
+              saldoCobrado: totalPagado >= proj.totalAmount,
+              updatedAt: now,
+            });
+            actualizados++;
+          }
+        }
+      }
+      return actualizados;
+    } catch (e) {
+      console.warn('Error en autoHealProyectosConPagos:', e);
+      return 0;
+    }
+  }
 }

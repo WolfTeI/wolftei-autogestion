@@ -34,10 +34,10 @@ export interface ProyectoView extends Proyecto {
 }
 
 export const KANBAN_COLUMNS = [
-  { id: 'esperando_anticipo', label: 'Esperando Anticipo', icon: 'pending_actions', color: '#f59e0b' },
-  { id: 'en_progreso',        label: 'En Desarrollo',      icon: 'engineering',     color: '#3b82f6' },
-  { id: 'testing',            label: 'QA / Testing',       icon: 'rule',            color: '#8b5cf6' },
-  { id: 'entregado',          label: 'Entregado',          icon: 'task_alt',        color: '#10b981' }
+  { id: 'esperando_anticipo', label: 'Esperando Pago',  icon: 'pending_actions', color: '#f59e0b' },
+  { id: 'en_progreso',        label: 'En Desarrollo',   icon: 'engineering',     color: '#3b82f6' },
+  { id: 'testing',            label: 'QA / Testing',    icon: 'rule',            color: '#8b5cf6' },
+  { id: 'entregado',          label: 'Entregado',       icon: 'task_alt',        color: '#10b981' }
 ];
 
 @Component({
@@ -86,8 +86,19 @@ export class ProyectosComponent implements OnInit, OnDestroy {
     this.verificarEntregadosVencidos();
     this.cargarFiltroClientes();
     this.sincronizarPropuestasAprobadas();
+    this.proyectosService.autoHealProyectosConPagos().then(reparados => {
+      if (reparados > 0) {
+        console.log(`AutoHeal: ${reparados} proyecto(s) con anticipo cobrado sincronizados a 'En Desarrollo'.`);
+      }
+    });
     this.iniciarEscuchaTiempoReal();
     this.proyectosService.sincronizarVitrinaPublica();
+  }
+
+  verDetalleProyecto(p: ProyectoView): void {
+    if (p.id) {
+      this.router.navigate(['/dashboard/proyectos', p.id]);
+    }
   }
 
   cargarFiltroClientes(): void {

@@ -1,0 +1,846 @@
+<div class="detalle-proyecto-container">
+  @if (cargando()) {
+    <div class="loading-shade">
+      <mat-spinner diameter="44"></mat-spinner>
+      <p>Cargando expediente integral del proyecto...</p>
+    </div>
+  } @else if (proyecto(); as p) {
+    <!-- ── CABECERA PRINCIPAL ── -->
+    <div class="page-header">
+      <div class="header-left">
+        <button
+          mat-icon-button
+          (click)="volver()"
+          class="back-btn"
+          matTooltip="Volver a Gestión de Proyectos"
+        >
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="title-info">
+          <h1>{{ p.title }}</h1>
+          <div class="subtitle-line">
+            <span
+              >Cliente:
+              <strong class="client-link">{{
+                p.clientName || "Cliente Particular"
+              }}</strong></span
+            >
+            @if (p.cliente?.taxId) {
+              <span>· CUIT/ID: {{ p.cliente.taxId }}</span>
+            }
+            @if (p.versionTag) {
+              <span class="version-badge">{{ p.versionTag }}</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Selector de Estado del Proyecto -->
+        <button
+          mat-button
+          [matMenuTriggerFor]="estadoMenu"
+          class="status-badge-button"
+          [class]="'status-' + p.status"
+          matTooltip="Cambiar estado del proyecto"
+        >
+          <mat-icon>{{ getEstadoInfo(p.status).icon }}</mat-icon>
+          <span>{{ getEstadoInfo(p.status).label }}</span>
+          <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #estadoMenu="matMenu">
+          @for (e of estadosValidos; track e.id) {
+            <button
+              mat-menu-item
+              (click)="cambiarEstado(e.id)"
+              [disabled]="p.status === e.id"
+            >
+              <mat-icon [style.color]="e.color">{{ e.icon }}</mat-icon>
+              <span>{{ e.label }}</span>
+            </button>
+          }
+        </mat-menu>
+
+        <!-- Botón Rápido de Registrar Cobro -->
+        @if (saldoRestante > 0) {
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="abrirRegistrarPago()"
+          >
+            <mat-icon>payments</mat-icon> Registrar Cobro
+          </button>
+        }
+
+        <!-- Botón de Bóveda de Accesos -->
+        <button
+          mat-stroked-button
+          (click)="abrirBoveda()"
+          style="color: #a78bfa; border-color: rgba(167, 139, 250, 0.4)"
+          matTooltip="Bóveda de Credenciales e Infraestructura (AES-GCM)"
+        >
+          <mat-icon style="color: #a78bfa">lock</mat-icon> Bóveda
+        </button>
+
+        <!-- Menú de Documentación Legal -->
+        <button
+          mat-stroked-button
+          [matMenuTriggerFor]="docLegalMenu"
+          matTooltip="Descargar Contratos, NDA o Acta de Garantía"
+        >
+          <mat-icon>gavel</mat-icon> Legal
+          <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #docLegalMenu="matMenu">
+          <button mat-menu-item (click)="descargarContrato()">
+            <mat-icon>description</mat-icon>
+            <span>Contrato de Desarrollo (PDF)</span>
+          </button>
+          <button mat-menu-item (click)="descargarNDA()">
+            <mat-icon>lock</mat-icon>
+            <span>Acuerdo Confidencialidad NDA (PDF)</span>
+          </button>
+          <button mat-menu-item (click)="descargarActaGarantia()">
+            <mat-icon style="color: #10b981">verified</mat-icon>
+            <span>Acta de Entrega y Garantía 30d (PDF)</span>
+          </button>
+        </mat-menu>
+
+        <!-- Crear Versión / Módulo Evolutivo -->
+        <button
+          mat-stroked-button
+          (click)="abrirNuevaVersion()"
+          matTooltip="Crear iteración o módulo evolutivo"
+        >
+          <mat-icon style="color: #3b82f6">add_to_photos</mat-icon> + Versión
+        </button>
+      </div>
+    </div>
+
+    <!-- ── MÉTRICAS FINANCIERAS Y DE FASE ── -->
+    <div class="metric-cards-grid">
+      <div class="metric-card">
+        <div class="metric-icon-wrap blue">
+          <mat-icon>account_balance_wallet</mat-icon>
+        </div>
+        <div class="metric-text">
+          <span class="metric-label">Inversión Acordada</span>
+          <span class="metric-val">{{
+            totalInversion | currency: p.currency : "symbol" : "1.0-0"
+          }}</span>
+          <span class="metric-sub">{{ p.currency }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon-wrap green">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="metric-text">
+          <span class="metric-label">Cobro Percibido</span>
+          <span class="metric-val" style="color: #34d399">{{
+            totalCobrado | currency: p.currency : "symbol" : "1.0-0"
+          }}</span>
+          <span class="metric-sub">{{ porcentajeCobrado }}% liquidado</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon-wrap amber">
+          <mat-icon>pending</mat-icon>
+        </div>
+        <div class="metric-text">
+          <span class="metric-label">Saldo Pendiente</span>
+          <span
+            class="metric-val"
+            [style.color]="saldoRestante > 0 ? '#fbbf24' : '#94a3b8'"
+          >
+            {{ saldoRestante | currency: p.currency : "symbol" : "1.0-0" }}
+          </span>
+          <span class="metric-sub">{{
+            saldoRestante === 0 ? "100% Cancelado" : "Pendiente de cobro"
+          }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon-wrap purple">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="metric-text">
+          <span class="metric-label">Fase Actual</span>
+          <span class="metric-val" style="font-size: 1.15rem">{{
+            p.currentPhase || "Desarrollo"
+          }}</span>
+          <span class="metric-sub"
+            >Plazo pactado: {{ p.deliveryDays || 20 }} días</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PESTAÑAS INTEGRALES DEL EXPEDIENTE (DOSSIER 360°) ── -->
+    <div class="project-tabs mat-elevation-z4">
+      <mat-tab-group animationDuration="200ms">
+        <!-- 1. RESUMEN & ALCANCE TÉCNICO -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon style="margin-right: 6px">subject</mat-icon>
+            Visión General & Alcance
+          </ng-template>
+
+          <div class="tab-content">
+            <!-- Resumen del Proyecto -->
+            <div class="info-card">
+              <div class="card-title">
+                <mat-icon>info</mat-icon>
+                <span>Descripción del Proyecto</span>
+              </div>
+              <p style="color: #cbd5e1; line-height: 1.6; margin: 0">
+                {{ p.description || "Sin descripción adicional registrada." }}
+              </p>
+            </div>
+
+            <!-- Propuesta Comercial Vinculada -->
+            @if (propuesta(); as prop) {
+              <div class="info-card">
+                <div class="card-title" style="justify-content: space-between">
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <mat-icon style="color: #10b981">description</mat-icon>
+                    <span>Propuesta Comercial Aceptada ({{ prop.title }})</span>
+                  </div>
+                  <div style="display: flex; gap: 8px">
+                    <button
+                      mat-stroked-button
+                      [routerLink]="['/dashboard/propuestas', prop.id]"
+                      style="color: #60a5fa"
+                    >
+                      <mat-icon>open_in_new</mat-icon> Ver Presupuesto Completo
+                    </button>
+                  </div>
+                </div>
+
+                <div style="margin-top: 12px">
+                  <h4
+                    style="
+                      color: #94a3b8;
+                      font-size: 0.85rem;
+                      text-transform: uppercase;
+                      margin-bottom: 8px;
+                    "
+                  >
+                    Objetivo del Desarrollo:
+                  </h4>
+                  <p style="color: #e2e8f0; line-height: 1.5">
+                    {{ prop.objective }}
+                  </p>
+
+                  @if (prop.modules && prop.modules.length > 0) {
+                    <h4
+                      style="
+                        color: #94a3b8;
+                        font-size: 0.85rem;
+                        text-transform: uppercase;
+                        margin: 16px 0 8px;
+                      "
+                    >
+                      Módulos Contratados:
+                    </h4>
+                    <div
+                      style="
+                        display: grid;
+                        grid-template-columns: repeat(
+                          auto-fill,
+                          minmax(280px, 1fr)
+                        );
+                        gap: 10px;
+                      "
+                    >
+                      @for (mod of prop.modules; track mod.name) {
+                        <div
+                          style="
+                            background: rgba(15, 23, 42, 0.6);
+                            padding: 12px;
+                            border-radius: 8px;
+                            border: 1px solid rgba(255, 255, 255, 0.05);
+                          "
+                        >
+                          <strong
+                            style="
+                              color: #f1f5f9;
+                              display: block;
+                              margin-bottom: 4px;
+                            "
+                            >{{ mod.name }}</strong
+                          >
+                          <span style="color: #94a3b8; font-size: 0.82rem">{{
+                            mod.description
+                          }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Informe Técnico / Diagnóstico Vinculado (si existe) -->
+            @if (informe(); as inf) {
+              <div class="info-card">
+                <div class="card-title" style="justify-content: space-between">
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <mat-icon style="color: #8b5cf6">biotech</mat-icon>
+                    <span
+                      >Informe Diagnóstico Técnico & Problemática ({{
+                        inf.title
+                      }})</span
+                    >
+                  </div>
+                  <button
+                    mat-stroked-button
+                    [routerLink]="['/dashboard/informes', inf.id]"
+                    style="color: #c084fc"
+                  >
+                    <mat-icon>open_in_new</mat-icon> Ver Informe Técnico
+                  </button>
+                </div>
+                <div style="margin-top: 12px">
+                  <p style="color: #e2e8f0; line-height: 1.6">
+                    {{ inf.resumenSolucion || inf.situacionActual }}
+                  </p>
+                  @if (inf.tecnologiasRecomendadas) {
+                    <div
+                      style="
+                        background: rgba(139, 92, 246, 0.08);
+                        padding: 12px;
+                        border-radius: 8px;
+                        border-left: 3px solid #8b5cf6;
+                        margin-top: 10px;
+                      "
+                    >
+                      <strong style="color: #c084fc; font-size: 0.85rem"
+                        >Tecnologías Recomendadas:</strong
+                      >
+                      <p
+                        style="
+                          color: #e2e8f0;
+                          margin: 4px 0 0;
+                          font-size: 0.9rem;
+                        "
+                      >
+                        {{ inf.tecnologiasRecomendadas }}
+                      </p>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </mat-tab>
+
+        <!-- 2. FINANZAS, PAGOS & RECIBOS -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon style="margin-right: 6px">receipt_long</mat-icon>
+            Finanzas & Recibos ({{ pagos().length }})
+          </ng-template>
+
+          <div class="tab-content">
+            <div class="info-card">
+              <div class="card-title" style="justify-content: space-between">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <mat-icon style="color: #10b981">account_balance</mat-icon>
+                  <span>Historial de Cobranzas y Recibos Oficiales</span>
+                </div>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  (click)="abrirRegistrarPago()"
+                >
+                  <mat-icon>add</mat-icon> Registrar Nuevo Cobro
+                </button>
+              </div>
+
+              @if (pagos().length === 0) {
+                <div style="text-align: center; padding: 32px; color: #94a3b8">
+                  <mat-icon
+                    style="
+                      font-size: 36px;
+                      width: 36px;
+                      height: 36px;
+                      color: #64748b;
+                      margin-bottom: 8px;
+                    "
+                    >receipt</mat-icon
+                  >
+                  <p style="margin: 0">
+                    Aún no se han registrado cobros para este proyecto.
+                  </p>
+                  @if (saldoRestante > 0) {
+                    <button
+                      mat-stroked-button
+                      (click)="abrirRegistrarPago()"
+                      style="margin-top: 12px"
+                    >
+                      Registrar Anticipo Inicial
+                    </button>
+                  }
+                </div>
+              } @else {
+                <table mat-table [dataSource]="pagos()" class="payments-table">
+                  <ng-container matColumnDef="receipt">
+                    <th mat-header-cell *matHeaderCellDef>Recibo N°</th>
+                    <td mat-cell *matCellDef="let p">
+                      <span class="receipt-num">{{
+                        p.receiptNumber || "REC-000000"
+                      }}</span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="date">
+                    <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                    <td mat-cell *matCellDef="let p">
+                      {{ p.createdAt | date: "dd/MM/yyyy" }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="concept">
+                    <th mat-header-cell *matHeaderCellDef>Concepto</th>
+                    <td
+                      mat-cell
+                      *matCellDef="let p"
+                      style="text-transform: capitalize"
+                    >
+                      {{ p.concept }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="method">
+                    <th mat-header-cell *matHeaderCellDef>Método</th>
+                    <td
+                      mat-cell
+                      *matCellDef="let p"
+                      style="text-transform: capitalize"
+                    >
+                      {{ p.paymentMethod }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="amount">
+                    <th mat-header-cell *matHeaderCellDef>Monto Percibido</th>
+                    <td mat-cell *matCellDef="let p">
+                      <span class="amount-positive"
+                        >{{
+                          p.amount | currency: p.currency : "symbol" : "1.0-0"
+                        }}
+                        {{ p.currency }}</span
+                      >
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="actions">
+                    <th
+                      mat-header-cell
+                      *matHeaderCellDef
+                      style="text-align: right"
+                    >
+                      Acciones
+                    </th>
+                    <td mat-cell *matCellDef="let p" style="text-align: right">
+                      <button
+                        mat-stroked-button
+                        color="primary"
+                        (click)="descargarRecibo(p)"
+                        matTooltip="Descargar Recibo Oficial en PDF"
+                      >
+                        <mat-icon>picture_as_pdf</mat-icon> Descargar Recibo
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="columnasPagos"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnasPagos"></tr>
+                </table>
+              }
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- 3. DOCUMENTOS LEGALES -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon style="margin-right: 6px">gavel</mat-icon>
+            Documentación Legal
+          </ng-template>
+
+          <div class="tab-content">
+            <div class="docs-grid">
+              <!-- Contrato -->
+              <div class="doc-item-card">
+                <div>
+                  <div class="doc-icon-title">
+                    <mat-icon style="color: #3b82f6">description</mat-icon>
+                    <div>
+                      <h3>Contrato de Locación de Servicios</h3>
+                      <p>
+                        Instrumento formal con cláusulas de propiedad
+                        intelectual, pago y alcance.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="descargarContrato()"
+                  style="margin-top: 14px"
+                >
+                  <mat-icon>download</mat-icon> Generar Contrato (PDF)
+                </button>
+              </div>
+
+              <!-- NDA -->
+              <div class="doc-item-card">
+                <div>
+                  <div class="doc-icon-title">
+                    <mat-icon style="color: #a78bfa">lock</mat-icon>
+                    <div>
+                      <h3>Acuerdo de Confidencialidad (NDA)</h3>
+                      <p>
+                        Protección bilateral de secretos comerciales, código
+                        fuente y datos del cliente.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  mat-stroked-button
+                  style="
+                    color: #a78bfa;
+                    border-color: rgba(167, 139, 250, 0.4);
+                    margin-top: 14px;
+                  "
+                  (click)="descargarNDA()"
+                >
+                  <mat-icon>download</mat-icon> Generar NDA (PDF)
+                </button>
+              </div>
+
+              <!-- Acta de Garantía -->
+              <div class="doc-item-card">
+                <div>
+                  <div class="doc-icon-title">
+                    <mat-icon style="color: #10b981">verified</mat-icon>
+                    <div>
+                      <h3>Acta de Entrega y Garantía 30d</h3>
+                      <p>
+                        Constancia oficial de cierre de proyecto y cobertura de
+                        garantía técnica.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  mat-stroked-button
+                  style="
+                    color: #10b981;
+                    border-color: rgba(16, 185, 129, 0.4);
+                    margin-top: 14px;
+                  "
+                  (click)="descargarActaGarantia()"
+                >
+                  <mat-icon>download</mat-icon> Generar Acta Garantía (PDF)
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- 4. BÓVEDA SEGURA DE CREDENCIALES -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon style="margin-right: 6px">vpn_key</mat-icon>
+            Bóveda de Accesos (AES-256)
+          </ng-template>
+
+          <div class="tab-content">
+            <div class="info-card">
+              <div class="card-title" style="justify-content: space-between">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <mat-icon style="color: #a78bfa">security</mat-icon>
+                  <span>Bóveda Cifrada de Infraestructura y Accesos</span>
+                </div>
+                <button
+                  mat-flat-button
+                  style="background: #a78bfa; color: #0f172a"
+                  (click)="abrirBoveda()"
+                >
+                  <mat-icon>lock_open</mat-icon> Abrir Bóveda Segura
+                </button>
+              </div>
+
+              <p
+                style="
+                  color: #94a3b8;
+                  font-size: 0.9rem;
+                  line-height: 1.6;
+                  margin: 0 0 16px;
+                "
+              >
+                Las credenciales de servidores, bases de datos, hosting y
+                repositorios se encuentran cifradas con el estándar militar
+                <strong>AES-256-GCM</strong> (ISO 27001 / OWASP A02). Solo se
+                desencriptan en memoria al autorizar su lectura.
+              </p>
+
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                  gap: 12px;
+                  margin-top: 14px;
+                "
+              >
+                <div
+                  style="
+                    background: rgba(15, 23, 42, 0.6);
+                    padding: 12px;
+                    border-radius: 8px;
+                  "
+                >
+                  <span
+                    style="
+                      color: #64748b;
+                      font-size: 0.75rem;
+                      text-transform: uppercase;
+                      display: block;
+                    "
+                    >Hosting / Servidor</span
+                  >
+                  <strong style="color: #f1f5f9">{{
+                    p.proveedorInfra || "No especificado"
+                  }}</strong>
+                </div>
+                <div
+                  style="
+                    background: rgba(15, 23, 42, 0.6);
+                    padding: 12px;
+                    border-radius: 8px;
+                  "
+                >
+                  <span
+                    style="
+                      color: #64748b;
+                      font-size: 0.75rem;
+                      text-transform: uppercase;
+                      display: block;
+                    "
+                    >Cuenta Infraestructura</span
+                  >
+                  <strong style="color: #f1f5f9">{{
+                    p.cuentaInfra || "No especificada"
+                  }}</strong>
+                </div>
+                <div
+                  style="
+                    background: rgba(15, 23, 42, 0.6);
+                    padding: 12px;
+                    border-radius: 8px;
+                  "
+                >
+                  <span
+                    style="
+                      color: #64748b;
+                      font-size: 0.75rem;
+                      text-transform: uppercase;
+                      display: block;
+                    "
+                    >Dominio Oficial</span
+                  >
+                  <strong style="color: #f1f5f9">{{
+                    p.dominio || "No especificado"
+                  }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- 5. ENCUESTA DE SATISFACCIÓN Y FEEDBACK -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon style="margin-right: 6px">star</mat-icon>
+            Feedback & Reseña
+          </ng-template>
+
+          <div class="tab-content">
+            <div class="info-card">
+              <div class="card-title">
+                <mat-icon style="color: #fbbf24">rate_review</mat-icon>
+                <span>Encuesta de Satisfacción del Cliente</span>
+              </div>
+
+              @if (p.reviewCompleted) {
+                <div
+                  style="
+                    background: rgba(16, 185, 129, 0.08);
+                    border: 1px solid rgba(16, 185, 129, 0.2);
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin-top: 14px;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+                      margin-bottom: 8px;
+                    "
+                  >
+                    <span
+                      style="
+                        color: #fbbf24;
+                        font-size: 1.25rem;
+                        letter-spacing: 2px;
+                      "
+                    >
+                      {{ "★".repeat(p.reviewStars || 5)
+                      }}{{ "☆".repeat(5 - (p.reviewStars || 5)) }}
+                    </span>
+                    <strong style="color: #34d399"
+                      >({{ p.reviewStars || 5 }}/5 estrellas recibidas)</strong
+                    >
+                  </div>
+                  <blockquote
+                    style="
+                      margin: 8px 0 0;
+                      color: #f1f5f9;
+                      font-style: italic;
+                      font-size: 1rem;
+                      line-height: 1.5;
+                    "
+                  >
+                    "{{ p.reviewComment }}"
+                  </blockquote>
+                </div>
+              } @else {
+                <p
+                  style="
+                    color: #94a3b8;
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                    margin: 0 0 16px;
+                  "
+                >
+                  El cliente puede calificar el servicio y dejar su testimonio a
+                  través de su enlace único y seguro de encuesta.
+                </p>
+
+                @if (p.reviewToken) {
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 12px;
+                      background: rgba(15, 23, 42, 0.6);
+                      padding: 12px 16px;
+                      border-radius: 8px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                    "
+                  >
+                    <mat-icon style="color: #60a5fa">link</mat-icon>
+                    <span
+                      style="
+                        color: #cbd5e1;
+                        font-family: monospace;
+                        font-size: 0.85rem;
+                        flex: 1;
+                      "
+                    >
+                      https://wolftei.com.ar/feedback/{{ p.reviewToken }}
+                    </span>
+                    <button
+                      mat-stroked-button
+                      (click)="copiarLinkEncuesta()"
+                      style="color: #60a5fa"
+                    >
+                      <mat-icon>content_copy</mat-icon> Copiar Link
+                    </button>
+                  </div>
+                } @else {
+                  <button
+                    mat-stroked-button
+                    (click)="entregarProyecto()"
+                    style="
+                      color: #34d399;
+                      border-color: rgba(16, 185, 129, 0.4);
+                    "
+                  >
+                    <mat-icon>task_alt</mat-icon> Generar Enlace de Encuesta y
+                    Entregar
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- 6. EVOLUCIONES & VERSIONES -->
+        @if (p.esProyectoMadre || p.versionTag || p.changelog) {
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon style="margin-right: 6px">auto_awesome</mat-icon>
+              Suite & Evoluciones
+            </ng-template>
+
+            <div class="tab-content">
+              <div class="info-card">
+                <div class="card-title" style="justify-content: space-between">
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <mat-icon style="color: #3b82f6">layers</mat-icon>
+                    <span>Historial Evolutivo de la Solución</span>
+                  </div>
+                  <button
+                    mat-stroked-button
+                    (click)="abrirNuevaVersion()"
+                    style="color: #60a5fa"
+                  >
+                    <mat-icon>add</mat-icon> Nueva Versión
+                  </button>
+                </div>
+
+                @if (p.changelog) {
+                  <div style="margin-top: 12px">
+                    <h4
+                      style="
+                        color: #94a3b8;
+                        font-size: 0.85rem;
+                        text-transform: uppercase;
+                        margin-bottom: 8px;
+                      "
+                    >
+                      Changelog / Registro de Cambios:
+                    </h4>
+                    <pre
+                      style="
+                        background: rgba(15, 23, 42, 0.6);
+                        padding: 16px;
+                        border-radius: 8px;
+                        color: #cbd5e1;
+                        font-family: monospace;
+                        font-size: 0.85rem;
+                        white-space: pre-wrap;
+                      "
+                      >{{ p.changelog }}</pre
+                    >
+                  </div>
+                }
+              </div>
+            </div>
+          </mat-tab>
+        }
+      </mat-tab-group>
+    </div>
+  }
+</div>

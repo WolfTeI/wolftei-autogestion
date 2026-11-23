@@ -18,14 +18,12 @@ import { ProyectosService } from '../../../service/proyectos.service';
 import { ClientesService, Cliente } from '../../../service/clientes.service';
 import { EditarClienteDialogComponent } from '../clientes/editar-cliente-dialog/editar-cliente-dialog.component';
 
-/** Configuración de estados para filtros y menú */
+/** Configuración de estados comerciales exclusivos de Propuestas */
 const ESTADOS = [
-  { value: 'borrador', label: 'Borrador', color: '#888', icon: 'draft' },
+  { value: 'borrador', label: 'Borrador', color: '#94a3b8', icon: 'draft' },
   { value: 'enviado', label: 'Enviado', color: '#f59e0b', icon: 'send' },
   { value: 'visto', label: 'Visto', color: '#3b82f6', icon: 'visibility' },
-  { value: 'aceptado', label: 'Aceptado', color: '#10b981', icon: 'check_circle' },
-  { value: 'en_desarrollo', label: 'En Desarrollo', color: '#8b5cf6', icon: 'code' },
-  { value: 'finalizado', label: 'Finalizado', color: '#6b7280', icon: 'done_all' },
+  { value: 'aceptado', label: 'Aceptado (En Proyectos)', color: '#10b981', icon: 'check_circle' },
   { value: 'cancelado', label: 'Cancelado', color: '#ef4444', icon: 'cancel' },
 ];
 
@@ -69,12 +67,13 @@ export class PropuestasComponent implements OnInit, OnDestroy {
   /** Filtros de la barra superior con conteo dinámico */
   get filtros() {
     const todos = this.propuestas();
-    const activas = todos.filter((p) => !p.status || p.status === 'borrador' || p.status === 'enviado' || p.status === 'visto' || p.status === 'aceptado');
+    const enNegociacion = todos.filter((p) => !p.status || p.status === 'borrador' || p.status === 'enviado' || p.status === 'visto');
+    const aceptadas = todos.filter((p) => p.status === 'aceptado' || p.status === 'en_desarrollo' || p.status === 'finalizado');
     return [
-      { value: 'activas', label: 'En Negociación', color: '#667eea', count: activas.length },
+      { value: 'activas', label: 'En Negociación', color: '#667eea', count: enNegociacion.length },
       ...ESTADOS.map((e) => ({
         ...e,
-        count: todos.filter((p) => p.status === e.value).length,
+        count: e.value === 'aceptado' ? aceptadas.length : todos.filter((p) => p.status === e.value).length,
       })),
       { value: 'todos', label: 'Histórico Total', color: '#94a3b8', count: todos.length },
     ];
@@ -84,7 +83,10 @@ export class PropuestasComponent implements OnInit, OnDestroy {
   get propuestasFiltradas(): Propuesta[] {
     if (this.filtroActivo === 'todos') return this.propuestas();
     if (this.filtroActivo === 'activas') {
-      return this.propuestas().filter((p) => !p.status || p.status === 'borrador' || p.status === 'enviado' || p.status === 'visto' || p.status === 'aceptado');
+      return this.propuestas().filter((p) => !p.status || p.status === 'borrador' || p.status === 'enviado' || p.status === 'visto');
+    }
+    if (this.filtroActivo === 'aceptado') {
+      return this.propuestas().filter((p) => p.status === 'aceptado' || p.status === 'en_desarrollo' || p.status === 'finalizado');
     }
     return this.propuestas().filter((p) => p.status === this.filtroActivo);
   }
@@ -124,7 +126,24 @@ export class PropuestasComponent implements OnInit, OnDestroy {
 
   /** Devuelve la etiqueta legible de un estado */
   getStatusLabel(status: string): string {
+    if (status === 'en_desarrollo' || status === 'finalizado') {
+      return 'Aceptado (En Proyectos)';
+    }
     return ESTADOS.find((e) => e.value === status)?.label ?? status;
+  }
+
+  /** Navega directamente al expediente del proyecto vinculado */
+  irAProyecto(propuesta: Propuesta) {
+    if (propuesta.proyectoId) {
+      this.router.navigate(['/dashboard/proyectos', propuesta.proyectoId]);
+    } else {
+      this.proyectosService.crearOObtenerDesdePropuesta(propuesta).subscribe({
+        next: (res) => {
+          this.router.navigate(['/dashboard/proyectos', res.proyecto.id]);
+        },
+        error: () => this.router.navigate(['/dashboard/proyectos'])
+      });
+    }
   }
 
   /** Navega al detalle de la propuesta */
@@ -147,7 +166,7 @@ export class PropuestasComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Cambia el estado de una propuesta y sincroniza con el Tablero de Proyectos si pasa a desarrollo */
+  /** Cambia el estado comercial de una propuesta y si es aceptada, activa el proyecto en Kanban */
   cambiarEstado(propuesta: Propuesta, nuevoEstado: string) {
     if (!propuesta.id) return;
     this.propuestasService.cambiarEstado(propuesta.id, nuevoEstado).subscribe({
@@ -156,17 +175,17 @@ export class PropuestasComponent implements OnInit, OnDestroy {
           lista.map((p) => (p.id === propuesta.id ? { ...p, status: nuevoEstado } : p))
         );
 
-        // Si se pasa a desarrollo o se acepta, crear/asegurar automáticamente el proyecto en el Kanban
-        if (nuevoEstado === 'en_desarrollo' || nuevoEstado === 'aceptado') {
+        // Si se acepta formalmente, dar de alta automáticamente el proyecto en Proyectos (Esperando Pago)
+        if (nuevoEstado === 'aceptado') {
           this.proyectosService.crearOObtenerDesdePropuesta(propuesta).subscribe({
-            next: () => {
+            next: (res) => {
               const snack = this.snackBar.open(
-                `🚀 Estado → "${this.getStatusLabel(nuevoEstado)}" y Proyecto activo en Kanban.`,
-                'Ver en Proyectos',
+                `🚀 Propuesta Aceptada → Proyecto activo en Tablero (Esperando Pago).`,
+                'Ver Proyecto',
                 { duration: 5000 }
               );
               snack.onAction().subscribe(() => {
-                this.router.navigate(['/dashboard/proyectos']);
+                this.router.navigate(['/dashboard/proyectos', res.proyecto.id]);
               });
             },
             error: (err) => {

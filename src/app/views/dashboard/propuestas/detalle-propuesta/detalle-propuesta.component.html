@@ -55,6 +55,11 @@
             <span>Descargar Ambos Instrumentos</span>
           </button>
         </mat-menu>
+        @if (p.status === 'aceptado' || p.status === 'en_desarrollo' || p.status === 'finalizado') {
+          <button mat-flat-button color="accent" (click)="irAProyecto()" matTooltip="Gestionar el desarrollo, finanzas y entregables del proyecto">
+            <mat-icon>account_tree</mat-icon> Ver en Proyectos
+          </button>
+        }
         <button mat-flat-button color="primary" (click)="descargarPDF()">
           <mat-icon>picture_as_pdf</mat-icon> Descargar PDF
         </button>
