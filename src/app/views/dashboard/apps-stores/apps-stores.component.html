@@ -1,0 +1,262 @@
+<div class="apps-stores-container">
+  <div class="apps-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <h1>Apps & Tiendas Oficiales</h1>
+        <span class="badge-stores">PLAY STORE · MICROSOFT STORE</span>
+      </div>
+      <p class="subtitle">
+        Contabilización de descargas, valoraciones, recaudación mensual (MRR) y proyección estratégica de productos de software propios.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" (click)="exportarCSV()" matTooltip="Exportar reporte de aplicaciones a CSV">
+        <mat-icon>file_download</mat-icon>
+        Exportar Reporte CSV
+      </button>
+      <button mat-flat-button color="primary" (click)="abrirRegistrarApp()">
+        <mat-icon>add</mat-icon>
+        + Registrar App
+      </button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando catálogo y estadísticas de tiendas...</p>
+    </div>
+  } @else {
+    <!-- ── KPIs Globales de Tiendas ── -->
+    <div class="kpis-grid">
+      <mat-card class="kpi-card total-apps">
+        <div class="kpi-icon-wrap">
+          <mat-icon>apps</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Apps en Catálogo</span>
+          <strong class="kpi-amount">{{ totalApps() }}</strong>
+          <small class="kpi-desc">Soluciones y productos registrados</small>
+        </div>
+      </mat-card>
+
+      <mat-card class="kpi-card total-descargas">
+        <div class="kpi-icon-wrap">
+          <mat-icon>download</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Descargas Globales</span>
+          <strong class="kpi-amount">{{ totalDescargas() }}</strong>
+          <small class="kpi-desc">{{ totalUsuariosActivos() }} usuarios activos mensuales</small>
+        </div>
+      </mat-card>
+
+      <mat-card class="kpi-card total-rating">
+        <div class="kpi-icon-wrap">
+          <mat-icon>star</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Reputación en Tiendas</span>
+          <strong class="kpi-amount">{{ calificacionPromedioGlobal() }} ⭐</strong>
+          <small class="kpi-desc">Promedio ponderado de valoraciones</small>
+        </div>
+      </mat-card>
+
+      <mat-card class="kpi-card total-mrr">
+        <div class="kpi-icon-wrap">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Ingresos Tiendas (MRR)</span>
+          <strong class="kpi-amount">{{ ingresosMensualesUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+          <small class="kpi-desc">+ {{ ingresosMensualesARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS mensuales</small>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- ── Sección Principal de Catálogo ── -->
+    <div class="section-box">
+      <div class="section-header">
+        <div>
+          <h2>Catálogo de Aplicaciones WolfTeI</h2>
+          <p>Métricas actualizadas de Google Play Console y Microsoft Partner Center.</p>
+        </div>
+
+        <div class="filter-pills">
+          <button
+            mat-button
+            [class.active-pill]="filtroPlataforma() === 'todas'"
+            (click)="setFiltro('todas')"
+          >
+            Todas ({{ apps().length }})
+          </button>
+          <button
+            mat-button
+            [class.active-pill]="filtroPlataforma() === 'google_play'"
+            (click)="setFiltro('google_play')"
+          >
+            <mat-icon class="pill-icon">android</mat-icon> Google Play
+          </button>
+          <button
+            mat-button
+            [class.active-pill]="filtroPlataforma() === 'microsoft_store'"
+            (click)="setFiltro('microsoft_store')"
+          >
+            <mat-icon class="pill-icon">laptop_windows</mat-icon> Microsoft Store
+          </button>
+        </div>
+      </div>
+
+      @if (appsFiltradas().length === 0) {
+        <div class="empty-box">
+          <mat-icon>storefront</mat-icon>
+          <span>No hay aplicaciones registradas en este filtro. Hacé clic en <strong>+ Registrar App</strong> para añadir tus apps de Android o Windows.</span>
+        </div>
+      } @else {
+        <div class="apps-grid">
+          @for (app of appsFiltradas(); track app.id) {
+            @let info = getPlataformaInfo(app.plataforma);
+            <mat-card class="app-card" [class]="info.cssClass">
+              <!-- Header de la Card -->
+              <div class="card-top">
+                <div class="app-avatar-wrap">
+                  <mat-icon class="platform-icon">{{ info.icon }}</mat-icon>
+                </div>
+                <div class="app-main-data">
+                  <div class="name-row">
+                    <h3>{{ app.nombre }}</h3>
+                    <span class="version-tag">v{{ app.version || '1.0.0' }}</span>
+                  </div>
+                  @if (app.paqueteId) {
+                    <code class="package-id">{{ app.paqueteId }}</code>
+                  }
+                </div>
+                <span class="status-badge" [class]="app.estado">
+                  {{ app.estado | uppercase }}
+                </span>
+              </div>
+
+              <!-- Métricas de la App -->
+              <div class="metrics-row">
+                <div class="metric-item">
+                  <span class="m-val">{{ app.descargasTotales }}</span>
+                  <span class="m-lbl">Descargas</span>
+                </div>
+                <div class="metric-item">
+                  <span class="m-val">{{ app.usuariosActivosMes }}</span>
+                  <span class="m-lbl">Activos / Mes</span>
+                </div>
+                <div class="metric-item">
+                  <span class="m-val gold">{{ app.calificacionPromedio }} ⭐</span>
+                  <span class="m-lbl">{{ app.totalResenas }} opiniones</span>
+                </div>
+                <div class="metric-item">
+                  <span class="m-val green">
+                    {{ app.ingresoMensualEstimado | currency: app.monedaIngreso : 'symbol' : '1.0-0' }}
+                  </span>
+                  <span class="m-lbl">{{ app.modeloMonetizacion | uppercase }}</span>
+                </div>
+              </div>
+
+              <!-- Nota Estratégica -->
+              @if (app.notasEstrategicas) {
+                <div class="strategy-note">
+                  <mat-icon>lightbulb</mat-icon>
+                  <p>{{ app.notasEstrategicas }}</p>
+                </div>
+              }
+
+              <!-- Footer de la Card -->
+              <div class="card-bottom">
+                <div class="card-date">
+                  <span>Lanzamiento: {{ app.fechaLanzamiento || 'S/D' }}</span>
+                </div>
+
+                <div class="card-actions">
+                  @if (app.urlTienda) {
+                    <button
+                      mat-stroked-button
+                      color="primary"
+                      class="btn-sm"
+                      (click)="abrirEnlaceTienda(app.urlTienda)"
+                      matTooltip="Abrir ficha en la tienda"
+                    >
+                      <mat-icon>open_in_new</mat-icon> Tienda
+                    </button>
+                  }
+                  <button
+                    mat-icon-button
+                    (click)="editarApp(app)"
+                    matTooltip="Editar métricas y datos"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    (click)="eliminarApp(app)"
+                    matTooltip="Eliminar del catálogo"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </mat-card>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- ── Cuadro de Proyección Estratégica y Rumbos de la Empresa ── -->
+    <div class="strategy-projection-section">
+      <div class="section-box">
+        <div class="section-header">
+          <div>
+            <h2>Proyección Estratégica & Rumbos de Negocio de WolfTeI</h2>
+            <p>Análisis comparativo de retorno de inversión entre desarrollo a medida (B2B) vs productos escalables en tiendas.</p>
+          </div>
+        </div>
+
+        <div class="projection-grid">
+          <div class="proj-card b2b">
+            <div class="proj-header">
+              <mat-icon>handshake</mat-icon>
+              <h3>Desarrollo a Medida B2B (Proyectos)</h3>
+            </div>
+            <ul>
+              <li><strong>Flujo Inmediato:</strong> Cobros significativos por anticipos y entregas ($250 a $1,500+ USD).</li>
+              <li><strong>Relación Directa:</strong> Clientes corporativos (talleres, ERPs, distribución) con alta fidelidad.</li>
+              <li><strong>Limitación:</strong> El crecimiento está atado a las horas de desarrollo dedicadas.</li>
+            </ul>
+            <div class="proj-badge">Rumbo: Base de sustentación y liquidez inmediata</div>
+          </div>
+
+          <div class="proj-card store">
+            <div class="proj-header">
+              <mat-icon>rocket_launch</mat-icon>
+              <h3>Apps en Tiendas (Google Play / Microsoft Store)</h3>
+            </div>
+            <ul>
+              <li><strong>Escalabilidad Pura:</strong> Una vez desarrollada, el costo de distribución adicional es casi cero.</li>
+              <li><strong>Generador de Leads:</strong> Las apps gratuitas o freemium sirven para captar clientes para contratos B2B mayores.</li>
+              <li><strong>Ingresos Pasivos:</strong> Suscripciones recurrentes y licencias directas que acumulan mes a mes.</li>
+            </ul>
+            <div class="proj-badge store-badge">Rumbo: Crecimiento exponencial y valor de marca</div>
+          </div>
+        </div>
+
+        <div class="sync-advice">
+          <mat-icon>info</mat-icon>
+          <div class="sync-text">
+            <strong>Cómo mantener las métricas sincronizadas:</strong>
+            <p>
+              Google Play Console y Microsoft Partner Center procesan las descargas y finanzas en cierres mensuales.
+              Actualizá las cifras de cada app al cerrar cada mes para tener una foto financiera exacta en WolfTeI Autogestión.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

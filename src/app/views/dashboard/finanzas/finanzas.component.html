@@ -11,6 +11,10 @@
     </div>
 
     <div class="header-actions">
+      <button mat-stroked-button (click)="abrirConfiguracionFiscal()" matTooltip="Configurar datos fiscales ARCA, Monotributo y cuentas bancarias">
+        <mat-icon>account_balance</mat-icon>
+        Configuración Fiscal ARCA
+      </button>
       <button mat-stroked-button color="primary" (click)="exportarLibroCobranzasCSV()" matTooltip="Exportar libro de cobranzas a CSV">
         <mat-icon>file_download</mat-icon>
         Exportar Libro CSV
@@ -254,7 +258,353 @@
         </div>
       </mat-tab>
 
-      <!-- ── TAB 2: MODERACIÓN DE RESEÑAS WEB ── -->
+      <!-- ── TAB 2: GASTOS & INVERSIONES DE LA EMPRESA ── -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">account_balance_wallet</mat-icon>
+          <span>Gastos & Inversiones ({{ gastos().length }})</span>
+        </ng-template>
+
+        <div class="tab-content">
+          <!-- KPIs de Egresos -->
+          <div class="kpis-grid">
+            <mat-card class="kpi-card gasto-opex">
+              <div class="kpi-icon-wrap">
+                <mat-icon>trending_down</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <span class="kpi-label">Gastos Operativos (OPEX)</span>
+                <strong class="kpi-amount">{{ totalGastosUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+                <small class="kpi-desc">Hosting, licencias, servicios, APIs</small>
+              </div>
+            </mat-card>
+
+            <mat-card class="kpi-card gasto-capex">
+              <div class="kpi-icon-wrap">
+                <mat-icon>devices</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <span class="kpi-label">Inversión en Activos (CAPEX)</span>
+                <strong class="kpi-amount">{{ totalInversionUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+                <small class="kpi-desc">Hardware, equipamiento, infraestructura</small>
+              </div>
+            </mat-card>
+
+            <mat-card class="kpi-card gasto-total-ars">
+              <div class="kpi-icon-wrap">
+                <mat-icon>currency_exchange</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <span class="kpi-label">Egresos en Pesos</span>
+                <strong class="kpi-amount">{{ totalEgresosARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</strong>
+                <small class="kpi-desc">Gastos locales + Inversiones</small>
+              </div>
+            </mat-card>
+
+            <mat-card class="kpi-card gasto-total-usd">
+              <div class="kpi-icon-wrap">
+                <mat-icon>receipt_long</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <span class="kpi-label">Total Egresos Globales</span>
+                <strong class="kpi-amount">{{ totalEgresosUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+                <small class="kpi-desc">OPEX + CAPEX combinados</small>
+              </div>
+            </mat-card>
+          </div>
+
+          <!-- Barra de Filtros y Registro de Gastos -->
+          <div class="section-box">
+            <div class="section-header">
+              <div>
+                <h2>Libro de Gastos e Inversiones</h2>
+                <p>Registro ordenado de costos operativos y activos de capital para reporte contable.</p>
+              </div>
+
+              <div class="actions-group">
+                <div class="filter-pills">
+                  <button
+                    mat-button
+                    [class.active-pill]="filtroTipoGasto() === 'todos'"
+                    (click)="setFiltroTipoGasto('todos')"
+                  >
+                    Todos ({{ gastos().length }})
+                  </button>
+                  <button
+                    mat-button
+                    [class.active-pill]="filtroTipoGasto() === 'gasto_operativo'"
+                    (click)="setFiltroTipoGasto('gasto_operativo')"
+                  >
+                    Operativos (OPEX)
+                  </button>
+                  <button
+                    mat-button
+                    [class.active-pill]="filtroTipoGasto() === 'inversion'"
+                    (click)="setFiltroTipoGasto('inversion')"
+                  >
+                    Inversión (CAPEX)
+                  </button>
+                </div>
+
+                <button mat-stroked-button (click)="exportarGastosCSV()" matTooltip="Exportar libro de gastos a CSV para contador">
+                  <mat-icon>file_download</mat-icon>
+                  Exportar CSV
+                </button>
+                <button mat-flat-button color="primary" (click)="abrirRegistrarGasto()">
+                  <mat-icon>add</mat-icon>
+                  + Registrar Gasto
+                </button>
+              </div>
+            </div>
+
+            @if (gastosFiltrados().length === 0) {
+              <div class="empty-box">
+                <mat-icon>savings</mat-icon>
+                <span>No hay gastos registrados en esta categoría. Registrá compras, servidores o licencias para mantener el balance al día.</span>
+              </div>
+            } @else {
+              <div class="table-container">
+                <table mat-table [dataSource]="gastosFiltrados()" class="custom-table">
+                  <ng-container matColumnDef="fecha">
+                    <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                    <td mat-cell *matCellDef="let g">
+                      {{ g.fecha | date: 'dd/MM/yyyy' }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="concepto">
+                    <th mat-header-cell *matHeaderCellDef>Concepto / Proveedor</th>
+                    <td mat-cell *matCellDef="let g">
+                      <div class="gasto-concepto-cell">
+                        <strong>{{ g.concepto }}</strong>
+                        @if (g.proveedor) {
+                          <span class="proveedor-sub">Prov: {{ g.proveedor }}</span>
+                        }
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="categoria">
+                    <th mat-header-cell *matHeaderCellDef>Categoría</th>
+                    <td mat-cell *matCellDef="let g">
+                      @let cat = getCategoriaInfo(g.categoria);
+                      <span class="badge-categoria" [style.color]="cat.color" [style.borderColor]="cat.color + '40'">
+                        <mat-icon class="cat-icon">{{ cat.icon }}</mat-icon>
+                        {{ cat.label }}
+                      </span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipoDestino">
+                    <th mat-header-cell *matHeaderCellDef>Destino</th>
+                    <td mat-cell *matCellDef="let g">
+                      <span class="badge-destino" [class.capex]="g.tipoDestino === 'inversion'">
+                        {{ g.tipoDestino === 'inversion' ? 'CAPEX (Activo)' : 'OPEX (Operativo)' }}
+                      </span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="metodoPago">
+                    <th mat-header-cell *matHeaderCellDef>Medio de Pago</th>
+                    <td mat-cell *matCellDef="let g">
+                      <span class="badge-metodo">{{ g.metodoPago | uppercase }}</span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="comprobanteRef">
+                    <th mat-header-cell *matHeaderCellDef>Comprobante / Factura</th>
+                    <td mat-cell *matCellDef="let g">
+                      @if (g.comprobanteRef) {
+                        <code class="recibo-code">{{ g.comprobanteRef }}</code>
+                      } @else {
+                        <span class="text-muted">Sin comprobante</span>
+                      }
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="monto">
+                    <th mat-header-cell *matHeaderCellDef>Monto</th>
+                    <td mat-cell *matCellDef="let g">
+                      <strong class="monto-val egreso-val">
+                        -{{ g.monto | currency: g.currency : 'symbol' : '1.0-0' }} {{ g.currency }}
+                      </strong>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="acciones">
+                    <th mat-header-cell *matHeaderCellDef class="text-right">Acción</th>
+                    <td mat-cell *matCellDef="let g" class="text-right">
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="eliminarGasto(g)"
+                        matTooltip="Eliminar registro de gasto"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="columnasGastos"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnasGastos;"></tr>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── TAB 3: BALANCE & RENTABILIDAD (P&L) ── -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">query_stats</mat-icon>
+          <span>Balance & Rentabilidad</span>
+        </ng-template>
+
+        <div class="tab-content">
+          <!-- Cuadro de Rentabilidad y P&L -->
+          <div class="balance-summary-grid">
+            <mat-card class="balance-card ingreso">
+              <div class="b-header">
+                <span class="b-label">Ingresos Reales Cobrados</span>
+                <mat-icon class="b-icon">trending_up</mat-icon>
+              </div>
+              <strong class="b-amount">{{ totalCobradoUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+              <small class="b-sub">+ {{ totalCobradoARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS cobrados</small>
+            </mat-card>
+
+            <mat-card class="balance-card opex">
+              <div class="b-header">
+                <span class="b-label">Gastos Operativos (OPEX)</span>
+                <mat-icon class="b-icon">trending_down</mat-icon>
+              </div>
+              <strong class="b-amount">{{ totalGastosUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+              <small class="b-sub">+ {{ totalGastosARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS en costos</small>
+            </mat-card>
+
+            <mat-card class="balance-card operativa">
+              <div class="b-header">
+                <span class="b-label">Ganancia Operativa Neta</span>
+                <mat-icon class="b-icon">savings</mat-icon>
+              </div>
+              <strong class="b-amount">{{ gananciaOperativaUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+              <div class="badge-margen">
+                Margen Rentabilidad: {{ margenRentabilidadPercent() }}%
+              </div>
+            </mat-card>
+
+            <mat-card class="balance-card caja">
+              <div class="b-header">
+                <span class="b-label">Caja Real Disponible</span>
+                <mat-icon class="b-icon">account_balance</mat-icon>
+              </div>
+              <strong class="b-amount">{{ cajaDisponibleUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong>
+              <small class="b-sub">Descontando CAPEX ({{ totalInversionUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD invertidos)</small>
+            </mat-card>
+          </div>
+
+          <!-- Tabla Contable Ejecutiva -->
+          <div class="section-box">
+            <div class="section-header">
+              <div>
+                <h2>Estado de Resultados y Flujo de Fondos (P&L Ejecutivo)</h2>
+                <p>Consolidado contable de ingresos por servicios, costo de estructura e inversión patrimonial.</p>
+              </div>
+              <button mat-stroked-button color="primary" (click)="exportarGastosCSV()">
+                <mat-icon>print</mat-icon> Reporte Contable
+              </button>
+            </div>
+
+            <div class="pnl-table-wrap">
+              <table class="pnl-table">
+                <thead>
+                  <tr>
+                    <th>Concepto Contable</th>
+                    <th class="text-right">Dólares (USD)</th>
+                    <th class="text-right">Pesos (ARS)</th>
+                    <th>Naturaleza e Impacto Financiero</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="row-positivo">
+                    <td>
+                      <div class="concept-title">
+                        <mat-icon>add_circle</mat-icon>
+                        <strong>Ingresos Operativos Cobrados</strong>
+                      </div>
+                    </td>
+                    <td class="text-right"><strong>{{ totalCobradoUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong></td>
+                    <td class="text-right"><strong>{{ totalCobradoARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</strong></td>
+                    <td>Fondos efectivamente acreditados por proyectos y desarrollos finalizados o anticipos.</td>
+                  </tr>
+
+                  <tr class="row-negativo">
+                    <td>
+                      <div class="concept-title">
+                        <mat-icon>remove_circle</mat-icon>
+                        <span>Gastos Operativos de Estructura (OPEX)</span>
+                      </div>
+                    </td>
+                    <td class="text-right text-red">-{{ totalGastosUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</td>
+                    <td class="text-right text-red">-{{ totalGastosARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</td>
+                    <td>Costos corrientes requeridos para operar: hosting, APIs, servidores, impuestos.</td>
+                  </tr>
+
+                  <tr class="row-subtotal">
+                    <td>
+                      <div class="concept-title">
+                        <mat-icon>equalizer</mat-icon>
+                        <strong>Resultado Operativo / Ganancia Neta</strong>
+                      </div>
+                    </td>
+                    <td class="text-right text-green"><strong>{{ gananciaOperativaUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong></td>
+                    <td class="text-right text-green"><strong>{{ (totalCobradoARS() - totalGastosARS()) | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</strong></td>
+                    <td><strong>Margen del negocio: {{ margenRentabilidadPercent() }}% sobre facturación cobrada.</strong></td>
+                  </tr>
+
+                  <tr class="row-negativo">
+                    <td>
+                      <div class="concept-title">
+                        <mat-icon>devices</mat-icon>
+                        <span>Inversiones en Activos y Hardware (CAPEX)</span>
+                      </div>
+                    </td>
+                    <td class="text-right text-purple">-{{ totalInversionUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</td>
+                    <td class="text-right text-purple">-{{ totalInversionARS() | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</td>
+                    <td>Bienes de capital adquiridos por la empresa (no es pérdida, es activo propio).</td>
+                  </tr>
+
+                  <tr class="row-final">
+                    <td>
+                      <div class="concept-title">
+                        <mat-icon>account_balance</mat-icon>
+                        <strong>Caja Neta Líquida Disponible</strong>
+                      </div>
+                    </td>
+                    <td class="text-right text-highlight"><strong>{{ cajaDisponibleUSD() | currency: 'USD' : 'symbol' : '1.0-0' }} USD</strong></td>
+                    <td class="text-right text-highlight"><strong>{{ (totalCobradoARS() - totalEgresosARS()) | currency: 'ARS' : 'symbol' : '1.0-0' }} ARS</strong></td>
+                    <td><strong>Superávit real disponible en cuentas bancarias para reinversión o dividendos.</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Proyección y Asesoría Contable -->
+            <div class="advice-card">
+              <mat-icon class="advice-icon">lightbulb</mat-icon>
+              <div class="advice-text">
+                <strong>Consejo de Planificación para WolfTeI:</strong>
+                <p>
+                  Mantené un colchón de caja operativa de al menos 3 a 6 meses de costos fijos antes de realizar grandes inversiones de capital.
+                  Al momento de presentar información a tu contador, utilizá el botón <em>Exportar CSV</em> tanto en Cobranzas como en Gastos para facilitarle la conciliación fiscal y declaraciones juradas de Monotributo.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── TAB 4: MODERACIÓN DE RESEÑAS WEB ── -->
       <mat-tab>
         <ng-template mat-tab-label>
           <mat-icon class="tab-icon">rate_review</mat-icon>

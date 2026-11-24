@@ -1,0 +1,182 @@
+<div class="fiscal-dialog-container">
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>account_balance</mat-icon>
+    </div>
+    <div>
+      <h2 mat-dialog-title>Configuración Fiscal & ARCA</h2>
+      <p class="dialog-subtitle">Régimen tributario, datos de facturación oficial y cuentas bancarias de WolfTeI.</p>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-wrap">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando información tributaria...</p>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <mat-dialog-content class="dialog-content">
+        <mat-tab-group animationDuration="150ms" class="fiscal-tabs">
+          
+          <!-- TAB 1: DATOS FISCALES ARCA / MONOTRIBUTO -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">domain</mat-icon>
+              <span>ARCA & Monotributo</span>
+            </ng-template>
+
+            <div class="tab-pane">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="col-6">
+                  <mat-label>Razón Social / Titular</mat-label>
+                  <input matInput formControlName="razonSocial" placeholder="Ej: Carlos Alberto Prost" />
+                  <mat-icon matPrefix>badge</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-6">
+                  <mat-label>Nombre Comercial / Fantasía</mat-label>
+                  <input matInput formControlName="nombreFantasia" placeholder="WolfTeI · Soluciones Digitales" />
+                  <mat-icon matPrefix>store</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="col-4">
+                  <mat-label>CUIT / CUIL</mat-label>
+                  <input matInput formControlName="cuit" placeholder="20-33607855-6" />
+                  <mat-icon matPrefix>pin</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-4">
+                  <mat-label>Condición Tributaria</mat-label>
+                  <mat-select formControlName="condicionIva">
+                    <mat-option value="Responsable Monotributo">Responsable Monotributo</mat-option>
+                    <mat-option value="Responsable Inscripto">Responsable Inscripto</mat-option>
+                    <mat-option value="Exento">Exento</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-4">
+                  <mat-label>Categoría Monotributo</mat-label>
+                  <mat-select formControlName="categoriaMonotributo">
+                    @for (cat of categoriasMonotributo; track cat) {
+                      <mat-option [value]="cat">{{ cat }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="col-4">
+                  <mat-label>Ingresos Brutos (IIBB)</mat-label>
+                  <input matInput formControlName="ingresosBrutos" placeholder="20-33607855-6 / Régimen Simplificado" />
+                  <mat-icon matPrefix>receipt</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-4">
+                  <mat-label>Inicio de Actividades</mat-label>
+                  <input matInput type="date" formControlName="inicioActividades" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-4">
+                  <mat-label>Punto de Venta Predeterminado</mat-label>
+                  <input matInput type="number" formControlName="puntoVenta" min="1" />
+                  <mat-icon matPrefix>point_of_sale</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="col-6">
+                  <mat-label>Domicilio Fiscal (Calle y Número)</mat-label>
+                  <input matInput formControlName="domicilioFiscal" placeholder="H. Quiroga 3343" />
+                  <mat-icon matPrefix>location_on</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-3">
+                  <mat-label>Localidad / Partido</mat-label>
+                  <input matInput formControlName="localidad" placeholder="Libertad, Merlo" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-3">
+                  <mat-label>Provincia</mat-label>
+                  <input matInput formControlName="provincia" placeholder="Buenos Aires" />
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="col-12">
+                  <mat-label>Leyenda Legal en Comprobantes y Recibos</mat-label>
+                  <textarea matInput formControlName="leyendaComprobante" rows="2" placeholder="Leyenda al pie de los recibos"></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- TAB 2: DATOS BANCARIOS Y COBRANZAS -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">credit_card</mat-icon>
+              <span>Cuentas Bancarias & Cobro</span>
+            </ng-template>
+
+            <div class="tab-pane">
+              <p class="tab-help">Estos datos se utilizan para generar las propuestas comerciales y facilitar las transferencias de los clientes.</p>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="col-6">
+                  <mat-label>Entidad Bancaria / Proveedor</mat-label>
+                  <input matInput formControlName="banco" placeholder="Banco Santander / Brubank / Lemon" />
+                  <mat-icon matPrefix>account_balance</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-6">
+                  <mat-label>Alias Bancario</mat-label>
+                  <input matInput formControlName="alias" placeholder="WOLFTEI.DIGITAL" />
+                  <mat-icon matPrefix>alternate_email</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="col-12">
+                  <mat-label>CBU / CVU (22 dígitos)</mat-label>
+                  <input matInput formControlName="cbu" placeholder="0000000000000000000000" maxlength="22" />
+                  <mat-icon matPrefix>tag</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="col-6">
+                  <mat-label>Titular de la Cuenta</mat-label>
+                  <input matInput formControlName="titularCuenta" placeholder="Carlos Alberto Prost" />
+                  <mat-icon matPrefix>person</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="col-6">
+                  <mat-label>CUIT del Titular</mat-label>
+                  <input matInput formControlName="cuitTitular" placeholder="20-33607855-6" />
+                  <mat-icon matPrefix>badge</mat-icon>
+                </mat-form-field>
+              </div>
+            </div>
+          </mat-tab>
+
+        </mat-tab-group>
+      </mat-dialog-content>
+
+      <mat-dialog-actions align="end" class="dialog-actions">
+        <button mat-button type="button" (click)="cancelar()" [disabled]="guardando()">
+          Cancelar
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || guardando()">
+          @if (guardando()) {
+            <mat-spinner diameter="18" class="btn-spinner"></mat-spinner>
+          } @else {
+            <mat-icon>save</mat-icon>
+          }
+          Guardar Configuración Fiscal
+        </button>
+      </mat-dialog-actions>
+    </form>
+  }
+</div>

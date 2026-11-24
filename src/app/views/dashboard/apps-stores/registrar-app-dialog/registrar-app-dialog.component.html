@@ -1,0 +1,170 @@
+<div class="app-dialog-container">
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>{{ esEdicion ? 'edit_note' : 'add_to_home_screen' }}</mat-icon>
+    </div>
+    <div>
+      <h2 mat-dialog-title>{{ esEdicion ? 'Editar Métricas de App' : 'Registrar App en Tienda' }}</h2>
+      <p class="dialog-subtitle">
+        {{ esEdicion ? 'Actualizá descargas, reseñas y recaudación de la tienda' : 'Sumá una app de Play Store o Microsoft Store al panel de control' }}
+      </p>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <mat-dialog-content class="dialog-content">
+      
+      <!-- Fila 1: Nombre y Plataforma -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-7">
+          <mat-label>Nombre de la Aplicación</mat-label>
+          <input matInput formControlName="nombre" placeholder="Ej: BHPH Collector Mobile" />
+          <mat-icon matPrefix>phone_android</mat-icon>
+          @if (form.get('nombre')?.hasError('required') && form.get('nombre')?.touched) {
+            <mat-error>El nombre es obligatorio</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-5">
+          <mat-label>Tienda / Plataforma</mat-label>
+          <mat-select formControlName="plataforma">
+            @for (p of plataformas; track p.value) {
+              <mat-option [value]="p.value">
+                <mat-icon class="opt-icon">{{ p.icon }}</mat-icon>
+                {{ p.label }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 2: Identificador y URL -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-5">
+          <mat-label>Package ID / App ID</mat-label>
+          <input matInput formControlName="paqueteId" placeholder="com.wolftei.app" />
+          <mat-icon matPrefix>code</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-4">
+          <mat-label>URL Ficha en Tienda</mat-label>
+          <input matInput formControlName="urlTienda" placeholder="https://play.google.com/..." />
+          <mat-icon matPrefix>link</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Versión</mat-label>
+          <input matInput formControlName="version" placeholder="1.2.0" />
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 3: Modelo y Estado -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-4">
+          <mat-label>Monetización</mat-label>
+          <mat-select formControlName="modeloMonetizacion">
+            @for (m of modelosMonetizacion; track m.value) {
+              <mat-option [value]="m.value">{{ m.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-4">
+          <mat-label>Precio de Venta</mat-label>
+          <input matInput type="number" formControlName="precio" min="0" step="0.5" />
+          <mat-icon matPrefix>attach_money</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-4">
+          <mat-label>Estado en Tienda</mat-label>
+          <mat-select formControlName="estado">
+            @for (est of estados; track est.value) {
+              <mat-option [value]="est.value">{{ est.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 4: Métricas Operativas (Descargas y Rating) -->
+      <div class="section-divider">
+        <span>Métricas Oficiales de Rendimiento (Consola de Desarrollador)</span>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Descargas Totales</mat-label>
+          <input matInput type="number" formControlName="descargasTotales" min="0" />
+          <mat-icon matPrefix>download</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Usuarios Activos (MAU)</mat-label>
+          <input matInput type="number" formControlName="usuariosActivosMes" min="0" />
+          <mat-icon matPrefix>people</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Rating Promedio (1 a 5)</mat-label>
+          <input matInput type="number" formControlName="calificacionPromedio" min="0" max="5" step="0.1" />
+          <mat-icon matPrefix>star</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Total Reseñas</mat-label>
+          <input matInput type="number" formControlName="totalResenas" min="0" />
+          <mat-icon matPrefix>rate_review</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 5: Ingresos Mensuales Estimados (MRR) -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-6">
+          <mat-label>Recaudación Mensual Estimada (MRR Tienda)</mat-label>
+          <input matInput type="number" formControlName="ingresoMensualEstimado" min="0" step="1" />
+          <mat-icon matPrefix>trending_up</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Moneda Ingreso</mat-label>
+          <mat-select formControlName="monedaIngreso">
+            <mat-option value="USD">Dólares (USD)</mat-option>
+            <mat-option value="ARS">Pesos (ARS)</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Lanzamiento</mat-label>
+          <input matInput type="date" formControlName="fechaLanzamiento" />
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 6: Notas Estratégicas y Visión de Negocio -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-12">
+          <mat-label>Notas Estratégicas / Objetivos de WolfTeI para esta App</mat-label>
+          <textarea
+            matInput
+            formControlName="notasEstrategicas"
+            rows="2"
+            placeholder="Ej: Traccionar clientes de concesionarias para vender módulo enterprise; optimizar ASO con palabras clave de cobros..."
+          ></textarea>
+        </mat-form-field>
+      </div>
+
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="dialog-actions">
+      <button mat-button type="button" (click)="cancelar()" [disabled]="guardando()">
+        Cancelar
+      </button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || guardando()">
+        @if (guardando()) {
+          <mat-spinner diameter="18" class="btn-spinner"></mat-spinner>
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
+        {{ esEdicion ? 'Actualizar Métricas' : 'Registrar App' }}
+      </button>
+    </mat-dialog-actions>
+  </form>
+</div>

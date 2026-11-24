@@ -137,6 +137,14 @@ export const routes: Routes = [
             (m) => m.FinanzasComponent,
           ),
       },
+      // ── Apps & Tiendas (Play Store / Microsoft Store) ──
+      {
+        path: 'apps-stores',
+        loadComponent: () =>
+          import('./views/dashboard/apps-stores/apps-stores.component').then(
+            (m) => m.AppsStoresComponent,
+          ),
+      },
       // ── Histórico y Expedientes Cerrados ──
       {
         path: 'historico',

@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { Pago } from '../service/pagos.service';
+import { FiscalSettings, FISCAL_DEFAULTS } from '../service/fiscal.service';
 import { obtenerFirmaActiva } from './firma-oficial';
 import { LOGO_WOLFTEI_BASE64 } from './logo-oficial';
 import { BRAND_CONFIG } from '../service/brand.service';
@@ -11,6 +12,7 @@ export interface ReceiptData {
   projectTitle: string;
   totalAmount?: number;
   saldoRestante?: number;
+  fiscal?: FiscalSettings;
 }
 
 /**
@@ -319,6 +321,8 @@ export function generateReceiptPDF(data: ReceiptData): void {
   }
 
   const signInfoY = y + 16;
+  const fiscalData = data.fiscal || FISCAL_DEFAULTS;
+
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(15, 23, 42); // Slate 900
@@ -326,9 +330,9 @@ export function generateReceiptPDF(data: ReceiptData): void {
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text('Carlos Alberto Prost', signX, signInfoY + 4.5);
-  doc.text('CUIT: 20-33607855-6', signX, signInfoY + 9);
-  doc.text('Libertad, Merlo, Bs. As.', signX, signInfoY + 13.5);
+  doc.text(fiscalData.razonSocial, signX, signInfoY + 4.5);
+  doc.text(`CUIT: ${fiscalData.cuit}`, signX, signInfoY + 9);
+  doc.text(`${fiscalData.localidad}, ${fiscalData.provincia}`, signX, signInfoY + 13.5);
 
   // ══════════════════════════════════════════════════════════════════════
   // 7. PIE DE PÁGINA CORPORATIVO

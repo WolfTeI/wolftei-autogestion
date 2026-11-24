@@ -15,11 +15,15 @@ import { combineLatest, of, Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { PagosService, Pago } from '../../../service/pagos.service';
+import { GastosService, Gasto } from '../../../service/gastos.service';
 import { PropuestasService, Propuesta } from '../../../service/propuestas.service';
 import { ProyectosService, Proyecto } from '../../../service/proyectos.service';
 import { ClientesService, Cliente } from '../../../service/clientes.service';
+import { FiscalService, FiscalSettings, FISCAL_DEFAULTS } from '../../../service/fiscal.service';
 import { generateReceiptPDF, ReceiptData } from '../../../utils/receipt-pdf-generator';
 import { RegistrarPagoDialogComponent, RegistrarPagoDialogData } from '../propuestas/detalle-propuesta/registrar-pago-dialog/registrar-pago-dialog.component';
+import { RegistrarGastoDialogComponent } from './registrar-gasto-dialog/registrar-gasto-dialog.component';
+import { ConfiguracionFiscalDialogComponent } from './configuracion-fiscal-dialog/configuracion-fiscal-dialog.component';
 
 export interface CuentaPorCobrar {
   propuestaId: string;
@@ -70,9 +74,11 @@ export interface ResenaCliente {
 })
 export class FinanzasComponent implements OnInit, OnDestroy {
   private pagosService = inject(PagosService);
+  private gastosService = inject(GastosService);
   private propuestasService = inject(PropuestasService);
   private proyectosService = inject(ProyectosService);
   private clientesService = inject(ClientesService);
+  private fiscalService = inject(FiscalService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private cdr = inject(ChangeDetectorRef);
@@ -81,15 +87,20 @@ export class FinanzasComponent implements OnInit, OnDestroy {
 
   cargando = signal<boolean>(true);
   pagos = signal<Pago[]>([]);
+  gastos = signal<Gasto[]>([]);
   propuestas = signal<Propuesta[]>([]);
   proyectos = signal<Proyecto[]>([]);
   clientes = signal<Cliente[]>([]);
+  fiscalSettings = signal<FiscalSettings>(FISCAL_DEFAULTS);
+
+  filtroTipoGasto = signal<'todos' | 'gasto_operativo' | 'inversion'>('todos');
 
   // Columnas para tablas
   columnasPagos: string[] = ['fecha', 'recibo', 'cliente', 'concepto', 'metodo', 'monto', 'acciones'];
   columnasPendientes: string[] = ['cliente', 'proyecto', 'total', 'cobrado', 'saldo', 'acciones'];
+  columnasGastos: string[] = ['fecha', 'concepto', 'categoria', 'tipoDestino', 'metodoPago', 'comprobanteRef', 'monto', 'acciones'];
 
-  // ── Métricas Computadas ──
+  // ── Métricas Computadas de Cobranzas ──
   totalCobradoUSD = computed(() => {
     return this.pagos()
       .filter((p) => p.currency === 'USD')
@@ -100,6 +111,50 @@ export class FinanzasComponent implements OnInit, OnDestroy {
     return this.pagos()
       .filter((p) => p.currency === 'ARS')
       .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+  });
+
+  // ── Métricas Computadas de Gastos e Inversión ──
+  gastosFiltrados = computed(() => {
+    const f = this.filtroTipoGasto();
+    if (f === 'todos') return this.gastos();
+    return this.gastos().filter((g) => g.tipoDestino === f);
+  });
+
+  totalGastosUSD = computed(() => {
+    return this.gastos()
+      .filter((g) => g.currency === 'USD' && g.tipoDestino === 'gasto_operativo')
+      .reduce((acc, curr) => acc + (Number(curr.monto) || 0), 0);
+  });
+
+  totalGastosARS = computed(() => {
+    return this.gastos()
+      .filter((g) => g.currency === 'ARS' && g.tipoDestino === 'gasto_operativo')
+      .reduce((acc, curr) => acc + (Number(curr.monto) || 0), 0);
+  });
+
+  totalInversionUSD = computed(() => {
+    return this.gastos()
+      .filter((g) => g.currency === 'USD' && g.tipoDestino === 'inversion')
+      .reduce((acc, curr) => acc + (Number(curr.monto) || 0), 0);
+  });
+
+  totalInversionARS = computed(() => {
+    return this.gastos()
+      .filter((g) => g.currency === 'ARS' && g.tipoDestino === 'inversion')
+      .reduce((acc, curr) => acc + (Number(curr.monto) || 0), 0);
+  });
+
+  totalEgresosUSD = computed(() => this.totalGastosUSD() + this.totalInversionUSD());
+  totalEgresosARS = computed(() => this.totalGastosARS() + this.totalInversionARS());
+
+  // ── Balance y Rentabilidad Neta ──
+  gananciaOperativaUSD = computed(() => this.totalCobradoUSD() - this.totalGastosUSD());
+  cajaDisponibleUSD = computed(() => this.totalCobradoUSD() - this.totalEgresosUSD());
+
+  margenRentabilidadPercent = computed(() => {
+    const cobrado = this.totalCobradoUSD();
+    if (cobrado <= 0) return 0;
+    return Math.round((this.gananciaOperativaUSD() / cobrado) * 100);
   });
 
   cuentasPorCobrar = computed<CuentaPorCobrar[]>(() => {
@@ -192,15 +247,19 @@ export class FinanzasComponent implements OnInit, OnDestroy {
     this.cargando.set(true);
     this.sub = combineLatest({
       pagos: this.pagosService.listenPagos().pipe(catchError(() => of([]))),
+      gastos: this.gastosService.listenGastos().pipe(catchError(() => of([]))),
       propuestas: this.propuestasService.listenPropuestas().pipe(catchError(() => of([]))),
       proyectos: this.proyectosService.listenProyectos().pipe(catchError(() => of([]))),
       clientes: this.clientesService.listenClientes().pipe(catchError(() => of([]))),
+      fiscal: this.fiscalService.listenFiscalSettings().pipe(catchError(() => of(FISCAL_DEFAULTS))),
     }).subscribe({
       next: (data) => {
         this.pagos.set(data.pagos);
+        this.gastos.set(data.gastos);
         this.propuestas.set(data.propuestas);
         this.proyectos.set(data.proyectos);
         this.clientes.set(data.clientes);
+        if (data.fiscal) this.fiscalSettings.set(data.fiscal);
         this.cargando.set(false);
         this.cdr.detectChanges();
       },
@@ -243,6 +302,7 @@ export class FinanzasComponent implements OnInit, OnDestroy {
       projectTitle,
       totalAmount,
       saldoRestante,
+      fiscal: this.fiscalSettings(),
     };
 
     try {
@@ -323,6 +383,100 @@ export class FinanzasComponent implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
 
     this.snackBar.open('📊 Libro de cobranzas exportado a CSV.', '', { duration: 3000 });
+  }
+
+  // ── Gestión de Gastos e Inversiones ──
+
+  abrirConfiguracionFiscal(): void {
+    this.dialog.open(ConfiguracionFiscalDialogComponent, {
+      width: '680px',
+    });
+  }
+
+  abrirRegistrarGasto(): void {
+    const dialogRef = this.dialog.open(RegistrarGastoDialogComponent, {
+      width: '560px',
+    });
+
+    dialogRef.afterClosed().subscribe((res) => {
+      if (res) {
+        this.snackBar.open('✅ Egreso registrado y computado en el balance.', 'Cerrar', { duration: 3500 });
+      }
+    });
+  }
+
+  eliminarGasto(gasto: Gasto): void {
+    if (!gasto.id) return;
+    const ok = window.confirm(`¿Estás seguro de que deseás eliminar el registro de gasto "${gasto.concepto}" por ${gasto.monto} ${gasto.currency}?`);
+    if (!ok) return;
+
+    this.gastosService.eliminar(gasto.id).subscribe({
+      next: () => {
+        this.snackBar.open('Registro de gasto eliminado correctamente.', '', { duration: 3000 });
+      },
+      error: (err) => {
+        console.error(err);
+        this.snackBar.open('Error al eliminar el gasto.', 'Cerrar', { duration: 3500 });
+      }
+    });
+  }
+
+  setFiltroTipoGasto(tipo: 'todos' | 'gasto_operativo' | 'inversion'): void {
+    this.filtroTipoGasto.set(tipo);
+  }
+
+  getCategoriaInfo(categoria: string): { label: string; icon: string; color: string } {
+    switch (categoria) {
+      case 'infraestructura':
+        return { label: 'Infraestructura', icon: 'cloud', color: '#38bdf8' };
+      case 'licencias_software':
+        return { label: 'Licencias / IDEs', icon: 'terminal', color: '#818cf8' };
+      case 'equipamiento_hardware':
+        return { label: 'Hardware / Equipos', icon: 'devices', color: '#34d399' };
+      case 'impuestos':
+        return { label: 'Impuestos / ARCA', icon: 'account_balance', color: '#fbbf24' };
+      case 'servicios_profesionales':
+        return { label: 'Servicios Profesionales', icon: 'work', color: '#c084fc' };
+      case 'marketing':
+        return { label: 'Marketing', icon: 'campaign', color: '#f472b6' };
+      case 'viaticos':
+        return { label: 'Viáticos', icon: 'commute', color: '#fb923c' };
+      default:
+        return { label: 'Otros Egresos', icon: 'more_horiz', color: '#94a3b8' };
+    }
+  }
+
+  exportarGastosCSV(): void {
+    const lista = this.gastos();
+    if (lista.length === 0) {
+      this.snackBar.open('No hay registros de gastos para exportar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const headers = ['Fecha', 'Concepto', 'Destino', 'Categoria', 'Metodo', 'Moneda', 'Monto', 'Comprobante', 'Notas'];
+    const rows = lista.map((g) => {
+      const fecha = g.fecha || '-';
+      const concepto = `"${g.concepto.replace(/"/g, '""')}"`;
+      const destino = g.tipoDestino === 'inversion' ? 'Inversion CAPEX' : 'Gasto Operativo OPEX';
+      const categoria = g.categoria || '-';
+      const metodo = g.metodoPago || '-';
+      const moneda = g.currency || 'USD';
+      const monto = g.monto || 0;
+      const comp = `"${(g.comprobanteRef || '').replace(/"/g, '""')}"`;
+      const notas = `"${(g.notas || '').replace(/"/g, '""')}"`;
+      return [fecha, concepto, destino, categoria, metodo, moneda, monto, comp, notas].join(';');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `WolfTeI_Libro_Gastos_Inversiones_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    this.snackBar.open('📊 Libro de gastos exportado a CSV para contador.', '', { duration: 3000 });
   }
 
   // ── Moderación de Reseñas ──

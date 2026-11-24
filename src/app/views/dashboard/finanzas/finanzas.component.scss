@@ -522,3 +522,314 @@
     }
   }
 }
+
+/* ── Estilos de Gastos, Inversiones y P&L ── */
+
+.kpi-card {
+  &.gasto-opex .kpi-icon-wrap {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+  }
+  &.gasto-capex .kpi-icon-wrap {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+  }
+  &.gasto-total-ars .kpi-icon-wrap {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+  }
+  &.gasto-total-usd .kpi-icon-wrap {
+    background: rgba(244, 63, 94, 0.15);
+    color: #fb7185;
+  }
+}
+
+.actions-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .filter-pills {
+    display: flex;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    button {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      height: 32px;
+      line-height: 32px;
+      padding: 0 12px;
+      border-radius: 6px;
+
+      &.active-pill {
+        background: #3b82f6;
+        color: #ffffff;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+.gasto-concepto-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    color: #f1f5f9;
+    font-size: 0.92rem;
+  }
+
+  .proveedor-sub {
+    font-size: 0.78rem;
+    color: #94a3b8;
+  }
+}
+
+.badge-categoria {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+
+  .cat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.badge-destino {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+
+  &.capex {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.25);
+  }
+}
+
+.egreso-val {
+  color: #f87171 !important;
+}
+
+/* ── Balance Summary Grid ── */
+.balance-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+
+  .balance-card {
+    padding: 22px;
+    border-radius: 14px;
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .b-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .b-label {
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        color: #94a3b8;
+      }
+
+      .b-icon {
+        font-size: 22px;
+        width: 22px;
+        height: 22px;
+      }
+    }
+
+    .b-amount {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+    }
+
+    .b-sub {
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+
+    &.ingreso {
+      border-top: 3px solid #3b82f6;
+      .b-icon { color: #60a5fa; }
+    }
+
+    &.opex {
+      border-top: 3px solid #ef4444;
+      .b-icon { color: #f87171; }
+      .b-amount { color: #f87171; }
+    }
+
+    &.operativa {
+      border-top: 3px solid #10b981;
+      .b-icon { color: #34d399; }
+      .b-amount { color: #34d399; }
+
+      .badge-margen {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 3px 8px;
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border-radius: 6px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        width: fit-content;
+      }
+    }
+
+    &.caja {
+      border-top: 3px solid #8b5cf6;
+      .b-icon { color: #a78bfa; }
+      .b-amount { color: #a78bfa; }
+    }
+  }
+}
+
+/* ── P&L Table ── */
+.pnl-table-wrap {
+  overflow-x: auto;
+  margin-top: 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  .pnl-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0f172a;
+    font-size: 0.88rem;
+
+    th {
+      background: #1e293b;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+      &.text-right { text-align: right; }
+    }
+
+    td {
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+
+      &.text-right { text-align: right; }
+    }
+
+    .concept-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .row-positivo {
+      .concept-title mat-icon { color: #3b82f6; }
+      td strong { color: #60a5fa; }
+    }
+
+    .row-negativo {
+      .concept-title mat-icon { color: #ef4444; }
+      .text-red { color: #f87171; font-weight: 600; }
+      .text-purple { color: #c084fc; font-weight: 600; }
+    }
+
+    .row-subtotal {
+      background: rgba(16, 185, 129, 0.07);
+      border-top: 1px solid rgba(16, 185, 129, 0.3);
+      border-bottom: 1px solid rgba(16, 185, 129, 0.3);
+
+      .concept-title mat-icon { color: #10b981; }
+      .text-green { color: #34d399; font-size: 1.05rem; }
+    }
+
+    .row-final {
+      background: rgba(139, 92, 246, 0.1);
+      border-top: 2px solid rgba(139, 92, 246, 0.4);
+
+      .concept-title mat-icon { color: #a78bfa; }
+      .text-highlight { color: #c084fc; font-size: 1.15rem; font-weight: 800; }
+    }
+  }
+}
+
+.advice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-left: 4px solid #f59e0b;
+  padding: 16px 20px;
+  border-radius: 10px;
+  margin-top: 24px;
+
+  .advice-icon {
+    color: #fbbf24;
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .advice-text {
+    strong {
+      color: #f8fafc;
+      font-size: 0.92rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      line-height: 1.5;
+
+      em {
+        color: #e2e8f0;
+        font-style: normal;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
