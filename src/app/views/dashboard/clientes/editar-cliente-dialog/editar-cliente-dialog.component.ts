@@ -129,19 +129,6 @@ export interface EditarClienteDialogData {
           </mat-form-field>
         </div>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Logo de la Empresa (URL de imagen)</mat-label>
-            <mat-icon matPrefix>image</mat-icon>
-            <input
-              matInput
-              formControlName="logoUrl"
-              placeholder="Ej: https://empresa.com/logo.png"
-            />
-            <mat-hint>El logo se exhibirá en la web pública únicamente tras el primer contrato cerrado y entregado.</mat-hint>
-          </mat-form-field>
-        </div>
-
         <mat-form-field appearance="outline" class="w-100">
           <mat-label>Notas internas / Referencia</mat-label>
           <textarea
@@ -269,7 +256,6 @@ export class EditarClienteDialogComponent implements OnInit {
     email: ["", [Validators.required, Validators.email]],
     phone: [""],
     address: [""],
-    logoUrl: [""],
     notes: [""],
   });
 
@@ -282,7 +268,6 @@ export class EditarClienteDialogComponent implements OnInit {
         email: this.data.cliente.email || "",
         phone: this.data.cliente.phone || "",
         address: this.data.cliente.address || "",
-        logoUrl: this.data.cliente.logoUrl || "",
         notes: this.data.cliente.notes || "",
       });
     } else {

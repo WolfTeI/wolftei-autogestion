@@ -460,9 +460,8 @@ export class ProyectosService {
 
   /**
    * Sincroniza la vitrina pública (/showcase/home) para el portal web:
-   * 1. Logos de empresas que tengan al menos 1 contrato cerrado/entregado ('entregado' o 'archivado') y posean logoUrl.
-   *    (Sin ningún otro dato del cliente, solo el logo de la empresa).
-   * 2. Reseñas aprobadas de proyectos entregados.
+   * Reseñas aprobadas de proyectos entregados.
+   * Los logos de clientes se administran de forma local e independiente en la web.
    * Protege estrictamente datos sensibles o PII (OWASP A01 / ISO 27001).
    */
   async sincronizarVitrinaPublica(): Promise<void> {
@@ -472,19 +471,11 @@ export class ProyectosService {
       const projectsCol = collection(db, this.COLLECTION_NAME);
       const snapP = await getDocs(projectsCol);
 
-      const clientIdsConEntregas = new Set<string>();
-      const clientNamesConEntregas = new Set<string>();
       const reviewsPublicadas: any[] = [];
 
       snapP.docs.forEach((docSnap) => {
         const p = docSnap.data() as Proyecto;
         if (p.status === 'entregado' || p.status === 'archivado') {
-          if (p.clientId) {
-            clientIdsConEntregas.add(p.clientId);
-          }
-          if (p.clientName) {
-            clientNamesConEntregas.add(p.clientName.trim().toLowerCase());
-          }
           if (p.reviewCompleted && p.reviewPublicada && p.reviewComment) {
             reviewsPublicadas.push({
               id: docSnap.id,
@@ -496,35 +487,14 @@ export class ProyectosService {
         }
       });
 
-      // 2. Obtener logos de esos clientes con entregas cumplidas
-      const logos: { id: string; logoUrl: string }[] = [];
-      const clientsCol = collection(db, 'clients');
-      const snapC = await getDocs(clientsCol);
-
-      snapC.docs.forEach((docSnap) => {
-        const c = docSnap.data() as any;
-        const nombreLower = (c.name || '').trim().toLowerCase();
-        const tieneEntrega = clientIdsConEntregas.has(docSnap.id) || (nombreLower && clientNamesConEntregas.has(nombreLower));
-
-        if (tieneEntrega && c.logoUrl && typeof c.logoUrl === 'string' && c.logoUrl.trim()) {
-          // EXCLUSIVAMENTE el logo de la empresa, sin nombres ni datos personales
-          logos.push({
-            id: docSnap.id,
-            logoUrl: c.logoUrl.trim(),
-          });
-        }
-      });
-
-      // 3. Escribir documento público /showcase/home
+      // 2. Escribir documento público /showcase/home (sobrescribiendo sin el array obsoleto de logos)
       const showcaseRef = doc(db, 'showcase', 'home');
       await setDoc(showcaseRef, {
-        logos,
         reviews: reviewsPublicadas,
         updatedAt: new Date().toISOString(),
-      }, { merge: true });
+      });
 
       console.log('✅ Vitrina pública sincronizada exitosamente:', {
-        totalLogos: logos.length,
         totalReviews: reviewsPublicadas.length,
       });
     } catch (e) {
