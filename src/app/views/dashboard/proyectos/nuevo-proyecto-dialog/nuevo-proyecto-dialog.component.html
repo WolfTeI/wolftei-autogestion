@@ -1,0 +1,211 @@
+<div class="nuevo-proyecto-dialog">
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>add_task</mat-icon>
+    </div>
+    <div>
+      <h2 mat-dialog-title>Iniciar Nuevo Proyecto / Ampliación</h2>
+      <p class="dialog-subtitle">Crea un expediente de desarrollo formal vinculado estrictamente a su cliente.</p>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-wrap">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando información...</p>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <mat-dialog-content class="dialog-content">
+        
+        <!-- Selección de Cliente Obligatorio -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="col-12">
+            <mat-label>Cliente Titular (Obligatorio)</mat-label>
+            <mat-select formControlName="clientId" [disabled]="clienteFijo">
+              @for (c of clientes(); track c.id) {
+                <mat-option [value]="c.id">
+                  <strong>{{ c.name }}</strong>
+                  @if (c.company) {
+                    <span> ({{ c.company }})</span>
+                  }
+                  @if (c.taxId) {
+                    <small> · CUIT: {{ c.taxId }}</small>
+                  }
+                </mat-option>
+              }
+            </mat-select>
+            <mat-icon matPrefix>person</mat-icon>
+            @if (form.get('clientId')?.hasError('required') && form.get('clientId')?.touched) {
+              <mat-error>El cliente es obligatorio para evitar proyectos huérfanos.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Título y Alcance -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="col-8">
+            <mat-label>Título del Proyecto / Sistema</mat-label>
+            <input matInput formControlName="title" placeholder="Ej: Vendix Preventa Móvil / API Calipso ERP" />
+            <mat-icon matPrefix>folder</mat-icon>
+            @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
+              <mat-error>El título es obligatorio.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-4">
+            <mat-label>Fase Inicial</mat-label>
+            <mat-select formControlName="currentPhase">
+              <mat-option value="Planificación y Alcance">Planificación y Alcance</mat-option>
+              <mat-option value="Diseño UI / Prototipado">Diseño UI / Prototipado</mat-option>
+              <mat-option value="Desarrollo Backend / API">Desarrollo Backend / API</mat-option>
+              <mat-option value="Desarrollo Frontend / App">Desarrollo Frontend / App</mat-option>
+              <mat-option value="Testing & QA">Testing & QA</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="col-12">
+            <mat-label>Descripción y Alcance General</mat-label>
+            <textarea matInput formControlName="description" rows="2" placeholder="Resumen del requerimiento del cliente y funcionalidades clave"></textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- Inversión Estimada Inicial -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="col-4">
+            <mat-label>Inversión Estimada</mat-label>
+            <input matInput type="number" formControlName="totalAmount" min="0" />
+            <mat-icon matPrefix>attach_money</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-4">
+            <mat-label>Moneda</mat-label>
+            <mat-select formControlName="currency">
+              <mat-option value="USD">Dólares (USD)</mat-option>
+              <mat-option value="ARS">Pesos (ARS)</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-4">
+            <mat-label>Plazo Pactado (Días)</mat-label>
+            <input matInput type="number" formControlName="deliveryDays" min="1" />
+            <mat-icon matPrefix>timelapse</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <!-- Sección de Hitos para el Calendario -->
+        <div class="section-divider">
+          <mat-icon>event</mat-icon>
+          <span>Cronograma de Hitos para el Calendario de Entregas</span>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="col-3">
+            <mat-label>Vista Previa / Wireframe</mat-label>
+            <input matInput type="date" formControlName="fechaVistaPrevia" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-3">
+            <mat-label>Demo de Avance</mat-label>
+            <input matInput type="date" formControlName="fechaDemo" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-3">
+            <mat-label>Entrega de MVP</mat-label>
+            <input matInput type="date" formControlName="fechaMvp" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="col-3">
+            <mat-label>Entrega Final / Producción</mat-label>
+            <input matInput type="date" formControlName="fechaEntrega" />
+          </mat-form-field>
+        </div>
+
+        <!-- Ampliación / Evolución de Proyecto Existente -->
+        <div class="section-divider">
+          <mat-icon>account_tree</mat-icon>
+          <span>Evolución & Ampliaciones (Suites de Software)</span>
+        </div>
+
+        <div class="checkbox-row">
+          <mat-checkbox formControlName="esAmpliacion" color="primary">
+            ¿Es una ampliación, versión o nueva fase de un software previo de este cliente?
+          </mat-checkbox>
+        </div>
+
+        @if (form.get('esAmpliacion')?.value) {
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="col-6">
+              <mat-label>Proyecto Madre / Base</mat-label>
+              <mat-select formControlName="parentProjectId">
+                @for (p of proyectosCliente(); track p.id) {
+                  <mat-option [value]="p.id">{{ p.title }} ({{ p.versionTag || 'v1.0' }})</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="col-3">
+              <mat-label>Versión / Tag</mat-label>
+              <input matInput formControlName="versionTag" placeholder="v1.1 / Fase 2" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="col-3">
+              <mat-label>Tipo de Evolución</mat-label>
+              <mat-select formControlName="tipoEvolucion">
+                <mat-option value="modulo_nuevo">Nuevo Módulo</mat-option>
+                <mat-option value="actualizacion_paradigma">Refactorización</mat-option>
+                <mat-option value="migracion">Migración</mat-option>
+                <mat-option value="mantenimiento">Mantenimiento</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        }
+
+        <!-- Abono de Soporte / Mantenimiento Opcional -->
+        <div class="section-divider">
+          <mat-icon>support_agent</mat-icon>
+          <span>Abono de Soporte & Mantenimiento Recurrente</span>
+        </div>
+
+        <div class="checkbox-row">
+          <mat-checkbox formControlName="incluyeSoporte" color="primary">
+            Activar abono mensual de soporte y mantenimiento para este desarrollo
+          </mat-checkbox>
+        </div>
+
+        @if (form.get('incluyeSoporte')?.value) {
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="col-6">
+              <mat-label>Abono Mensual</mat-label>
+              <input matInput type="number" formControlName="montoSoporte" min="0" />
+              <mat-icon matPrefix>paid</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="col-6">
+              <mat-label>Día de Cobro Mensual (1 al 31)</mat-label>
+              <input matInput type="number" formControlName="diaCobroSoporte" min="1" max="31" />
+              <mat-icon matPrefix>today</mat-icon>
+            </mat-form-field>
+          </div>
+        }
+
+      </mat-dialog-content>
+
+      <mat-dialog-actions align="end" class="dialog-actions">
+        <button mat-button type="button" (click)="cancelar()" [disabled]="guardando()">
+          Cancelar
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || guardando()">
+          @if (guardando()) {
+            <mat-spinner diameter="18" class="btn-spinner"></mat-spinner>
+          } @else {
+            <mat-icon>check</mat-icon>
+          }
+          Crear Proyecto Formal
+        </button>
+      </mat-dialog-actions>
+    </form>
+  }
+</div>

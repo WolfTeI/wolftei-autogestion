@@ -14,6 +14,34 @@ import {
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 
+export type TipoServicioSoporte =
+  | 'soporte_mensual'
+  | 'infraestructura_cloud'
+  | 'seguridad_backups'
+  | 'bolsa_horas'
+  | 'otro';
+
+export type EstadoPagoSoporte = 'al_dia' | 'pendiente_pago' | 'pausado';
+
+export interface ServicioMantenimiento {
+  id: string;
+  proyectoId?: string | null;
+  proyectoTitulo?: string | null;
+  tipo: TipoServicioSoporte;
+  nombre: string;
+  monto: number;
+  currency: 'USD' | 'ARS';
+  diaCobro: number; // Día del mes estipulado para el vencimiento (1 al 31)
+  estadoPago: EstadoPagoSoporte;
+  ultimoPagoFecha?: string;
+  proximoVencimiento?: string;
+  horasIncluidas?: number;
+  horasConsumidas?: number;
+  notasSLA?: string; // Acuerdos de nivel de servicio / alcance de soporte
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Cliente {
   id?: string;
   name: string;
@@ -24,6 +52,7 @@ export interface Cliente {
   logoUrl?: string;
   address?: string;
   notes?: string;
+  serviciosSoporte?: ServicioMantenimiento[];
   reputationScore?: number;
   reviewsCount?: number;
   createdAt?: string;
@@ -184,5 +213,74 @@ export class ClientesService {
     const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, id);
     await deleteDoc(docRef);
     return { message: 'Cliente eliminado exitosamente' };
+  }
+
+  // ── Gestión de Abonos de Mantenimiento y Servicios Recurrentes ──
+
+  agregarServicioSoporte(clienteId: string, servicio: Omit<ServicioMantenimiento, 'id' | 'createdAt'>): Observable<void> {
+    return from(this.executeAgregarSoporte(clienteId, servicio));
+  }
+
+  private async executeAgregarSoporte(clienteId: string, servicio: Omit<ServicioMantenimiento, 'id' | 'createdAt'>): Promise<void> {
+    const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, clienteId);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) throw new Error('Cliente no encontrado');
+
+    const cli = snap.data() as Cliente;
+    const listaActual = cli.serviciosSoporte || [];
+
+    const nuevo: ServicioMantenimiento = {
+      ...servicio,
+      id: `sop_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    listaActual.push(nuevo);
+    await updateDoc(docRef, {
+      serviciosSoporte: listaActual,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  actualizarServicioSoporte(clienteId: string, servicioId: string, updates: Partial<ServicioMantenimiento>): Observable<void> {
+    return from(this.executeActualizarSoporte(clienteId, servicioId, updates));
+  }
+
+  private async executeActualizarSoporte(clienteId: string, servicioId: string, updates: Partial<ServicioMantenimiento>): Promise<void> {
+    const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, clienteId);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) throw new Error('Cliente no encontrado');
+
+    const cli = snap.data() as Cliente;
+    const lista = (cli.serviciosSoporte || []).map((s) => {
+      if (s.id === servicioId) {
+        return { ...s, ...updates, updatedAt: new Date().toISOString() };
+      }
+      return s;
+    });
+
+    await updateDoc(docRef, {
+      serviciosSoporte: lista,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  eliminarServicioSoporte(clienteId: string, servicioId: string): Observable<void> {
+    return from(this.executeEliminarSoporte(clienteId, servicioId));
+  }
+
+  private async executeEliminarSoporte(clienteId: string, servicioId: string): Promise<void> {
+    const docRef = doc(this.firebaseService.db, this.COLLECTION_NAME, clienteId);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) throw new Error('Cliente no encontrado');
+
+    const cli = snap.data() as Cliente;
+    const lista = (cli.serviciosSoporte || []).filter((s) => s.id !== servicioId);
+
+    await updateDoc(docRef, {
+      serviciosSoporte: lista,
+      updatedAt: new Date().toISOString(),
+    });
   }
 }

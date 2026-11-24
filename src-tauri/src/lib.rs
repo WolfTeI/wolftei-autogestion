@@ -12,6 +12,78 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+#[tauri::command]
+fn set_autostart(enable: bool) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::env::current_exe;
+        use std::process::Command;
+
+        let exe_path = current_exe().map_err(|e| e.to_string())?;
+        let exe_str = exe_path.to_str().ok_or("Ruta de ejecutable inválida")?;
+
+        if enable {
+            let status = Command::new("reg")
+                .args(&[
+                    "add",
+                    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                    "/v",
+                    "WolfTeIAutogestion",
+                    "/t",
+                    "REG_SZ",
+                    "/d",
+                    &format!("\"{}\"", exe_str),
+                    "/f",
+                ])
+                .status()
+                .map_err(|e| e.to_string())?;
+
+            if !status.success() {
+                return Err("No se pudo registrar en Windows Run".into());
+            }
+        } else {
+            let _ = Command::new("reg")
+                .args(&[
+                    "delete",
+                    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                    "/v",
+                    "WolfTeIAutogestion",
+                    "/f",
+                ])
+                .status();
+        }
+        Ok(())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = enable;
+        Ok(())
+    }
+}
+
+#[tauri::command]
+fn get_autostart_status() -> Result<bool, String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let output = Command::new("reg")
+            .args(&[
+                "query",
+                "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                "/v",
+                "WolfTeIAutogestion",
+            ])
+            .output()
+            .map_err(|e| e.to_string())?;
+
+        Ok(output.status.success())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Ok(false)
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -69,7 +141,7 @@ pub fn run() {
                 let _ = window.hide();
             }
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![greet, set_autostart, get_autostart_status])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

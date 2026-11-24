@@ -63,6 +63,15 @@
 
       <a
         mat-list-item
+        routerLink="/dashboard/calendario"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>calendar_month</mat-icon>
+        <span matListItemTitle>Calendario</span>
+      </a>
+
+      <a
+        mat-list-item
         routerLink="/dashboard/finanzas"
         routerLinkActive="active"
       >
@@ -90,6 +99,16 @@
     </mat-nav-list>
 
     <div class="sidebar-footer">
+      <button
+        mat-button
+        (click)="toggleAutostart()"
+        [title]="autostartService.autostartEnabled() ? 'Inicio automático con Windows activado' : 'Inicio con Windows desactivado'"
+      >
+        <mat-icon [style.color]="autostartService.autostartEnabled() ? '#10b981' : '#94a3b8'">
+          {{ autostartService.autostartEnabled() ? 'check_circle' : 'radio_button_unchecked' }}
+        </mat-icon>
+        Iniciar con Windows
+      </button>
       <button mat-button (click)="buscarActualizacionesManual()" title="Buscar actualizaciones de la aplicación">
         <mat-icon>system_update</mat-icon>
         Buscar Actualizaciones

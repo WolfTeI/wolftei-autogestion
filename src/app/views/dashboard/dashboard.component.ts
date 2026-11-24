@@ -15,6 +15,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../service/auth.service';
 import { UpdaterService } from '../../service/updater.service';
 import { NotificationService } from '../../service/notification.service';
+import { AutostartService } from '../../service/autostart.service';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog.component';
 
 @Component({
@@ -40,6 +41,7 @@ export class DashboardComponent implements OnInit {
   dialog = inject(MatDialog);
   updaterService = inject(UpdaterService);
   notificationService = inject(NotificationService);
+  autostartService = inject(AutostartService);
 
   ngOnInit() {
     // Comprobar si hay una nueva versión disponible en GitHub Releases
@@ -47,6 +49,11 @@ export class DashboardComponent implements OnInit {
 
     // Inicializar listeners para notificaciones nativas de Windows en segundo plano
     this.notificationService.init();
+  }
+
+  toggleAutostart() {
+    const nuevo = !this.autostartService.autostartEnabled();
+    this.autostartService.setAutostart(nuevo);
   }
 
   buscarActualizacionesManual() {

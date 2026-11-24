@@ -23,6 +23,7 @@ import { InformesTecnicosService, InformeTecnico } from '../../../../service/inf
 import { generateContractPDF, generateNDAPDF } from '../../../../utils/contract-pdf-generator';
 import { generateActaGarantiaPDF } from '../../../../utils/acta-garantia-pdf-generator';
 import { generateReceiptPDF } from '../../../../utils/receipt-pdf-generator';
+import { generarArchivoICS, HitoCalendario } from '../../../../utils/ical-generator';
 import { BovedaCredencialesDialogComponent } from '../boveda-dialog/boveda-dialog.component';
 import { NuevaVersionDialogComponent } from '../nueva-version-dialog/nueva-version-dialog.component';
 import { RegistrarPagoDialogComponent, RegistrarPagoDialogData } from '../../propuestas/detalle-propuesta/registrar-pago-dialog/registrar-pago-dialog.component';
@@ -354,5 +355,109 @@ export class DetalleProyectoComponent implements OnInit {
         this.cargarProyecto(p.id);
       }
     });
+  }
+
+  // ── Acciones del Nuevo Flujo Jerárquico ──
+
+  crearInformeTecnico(): void {
+    const p = this.proyecto();
+    if (!p) return;
+    this.router.navigate(['/dashboard/informes/nuevo'], {
+      queryParams: {
+        clienteId: p.clientId,
+        proyectoId: p.id,
+      },
+      state: {
+        fromProyecto: {
+          clienteId: p.clientId,
+          clientName: p.clientName,
+          clientEmail: p.clientEmail,
+          clientCompany: p.clientCompany,
+          proyectoId: p.id,
+          title: `Informe Técnico & Diagnóstico: ${p.title}`,
+        }
+      }
+    });
+  }
+
+  crearPresupuestoComercial(): void {
+    const p = this.proyecto();
+    if (!p) return;
+    this.router.navigate(['/dashboard/propuestas/nueva'], {
+      queryParams: {
+        clienteId: p.clientId,
+        proyectoId: p.id,
+      },
+      state: {
+        fromProyecto: {
+          clientId: p.clientId,
+          clientName: p.clientName,
+          clientEmail: p.clientEmail,
+          proyectoId: p.id,
+          title: p.title,
+          totalAmount: p.totalAmount,
+          currency: p.currency,
+        }
+      }
+    });
+  }
+
+  exportarHitosICS(): void {
+    const p = this.proyecto();
+    if (!p) return;
+
+    const hitos: HitoCalendario[] = [];
+
+    if (p.fechaVistaPrevia) {
+      hitos.push({
+        titulo: `[Vista Previa] ${p.title} - ${p.clientName || 'Cliente'}`,
+        descripcion: `Entrega de wireframes y prototipo visual inicial para ${p.clientName || 'el cliente'}.`,
+        fecha: p.fechaVistaPrevia,
+        cliente: p.clientName,
+        proyecto: p.title,
+        tipo: 'vista_previa',
+      });
+    }
+
+    if (p.fechaDemo) {
+      hitos.push({
+        titulo: `[Demo Avance] ${p.title} - ${p.clientName || 'Cliente'}`,
+        descripcion: `Demostración de avance funcional en vivo con ${p.clientName || 'el cliente'}.`,
+        fecha: p.fechaDemo,
+        cliente: p.clientName,
+        proyecto: p.title,
+        tipo: 'demo',
+      });
+    }
+
+    if (p.fechaMvp) {
+      hitos.push({
+        titulo: `[Entrega MVP] ${p.title} - ${p.clientName || 'Cliente'}`,
+        descripcion: `Versión mínima viable desplegada y lista para pruebas operativas de ${p.clientName || 'el cliente'}.`,
+        fecha: p.fechaMvp,
+        cliente: p.clientName,
+        proyecto: p.title,
+        tipo: 'mvp',
+      });
+    }
+
+    if (p.fechaEntrega) {
+      hitos.push({
+        titulo: `[Puesta en Producción] ${p.title} - ${p.clientName || 'Cliente'}`,
+        descripcion: `Entrega final, homologación y cierre de desarrollo para ${p.clientName || 'el cliente'}.`,
+        fecha: p.fechaEntrega,
+        cliente: p.clientName,
+        proyecto: p.title,
+        tipo: 'entrega',
+      });
+    }
+
+    if (hitos.length === 0) {
+      this.snackBar.open('Este proyecto aún no tiene fechas de hitos o entregas estipuladas.', 'Cerrar', { duration: 3500 });
+      return;
+    }
+
+    generarArchivoICS(hitos, `WolfTeI_${p.title.replace(/\s+/g, '_')}`);
+    this.snackBar.open('📅 Cronograma exportado a formato iCalendar (.ics) para Windows Calendar / Outlook.', 'Cerrar', { duration: 4000 });
   }
 }

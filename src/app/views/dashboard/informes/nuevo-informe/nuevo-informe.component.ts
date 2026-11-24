@@ -147,6 +147,27 @@ export class NuevoInformeComponent implements OnInit {
       this.esEdicion.set(true);
       this.informeId = id;
       this.cargarInforme(id);
+    } else {
+      const fromProyecto = history.state?.fromProyecto;
+      const qClienteId = this.route.snapshot.queryParamMap.get('clienteId');
+      const qProyectoId = this.route.snapshot.queryParamMap.get('proyectoId');
+
+      if (fromProyecto) {
+        this.form.patchValue({
+          clientId: fromProyecto.clienteId || null,
+          clientName: fromProyecto.clientName || '',
+          clientEmail: fromProyecto.clientEmail || '',
+          clientCompany: fromProyecto.clientCompany || '',
+          title: fromProyecto.title || '',
+        });
+        if (fromProyecto.proyectoId) {
+          (this.form as any).proyectoId = fromProyecto.proyectoId;
+        }
+        this.snackBar.open(`📋 Informe técnico vinculado al proyecto "${fromProyecto.title}".`, 'Cerrar', { duration: 3500 });
+      } else if (qClienteId) {
+        this.form.patchValue({ clientId: qClienteId });
+        if (qProyectoId) (this.form as any).proyectoId = qProyectoId;
+      }
     }
   }
 

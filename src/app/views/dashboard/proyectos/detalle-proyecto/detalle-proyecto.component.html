@@ -106,6 +106,32 @@
           </button>
         </mat-menu>
 
+        <!-- Acciones del Flujo: Emitir Presupuesto o Informe -->
+        <button
+          mat-stroked-button
+          [matMenuTriggerFor]="flujoDocMenu"
+          style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4)"
+          matTooltip="Emitir informe técnico o presupuesto para este proyecto"
+        >
+          <mat-icon style="color: #38bdf8">post_add</mat-icon> Documento
+          <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #flujoDocMenu="matMenu">
+          <button mat-menu-item (click)="crearPresupuestoComercial()">
+            <mat-icon style="color: #f59e0b">request_quote</mat-icon>
+            <span>Emitir Presupuesto Comercial</span>
+          </button>
+          <button mat-menu-item (click)="crearInformeTecnico()">
+            <mat-icon style="color: #8b5cf6">assignment</mat-icon>
+            <span>Crear Informe Técnico / Diagnóstico</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="exportarHitosICS()">
+            <mat-icon style="color: #38bdf8">event</mat-icon>
+            <span>Exportar Hitos a Calendario Windows (.ics)</span>
+          </button>
+        </mat-menu>
+
         <!-- Crear Versión / Módulo Evolutivo -->
         <button
           mat-stroked-button
@@ -199,6 +225,41 @@
               <p style="color: #cbd5e1; line-height: 1.6; margin: 0">
                 {{ p.description || "Sin descripción adicional registrada." }}
               </p>
+            </div>
+
+            <!-- Cronograma de Hitos y Entregas (Windows Calendar) -->
+            <div class="info-card">
+              <div class="card-title" style="justify-content: space-between">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <mat-icon style="color: #38bdf8">event</mat-icon>
+                  <span>Cronograma de Hitos y Entregas</span>
+                </div>
+                <button mat-stroked-button color="primary" (click)="exportarHitosICS()">
+                  <mat-icon>calendar_month</mat-icon> Exportar a Calendario Windows (.ics)
+                </button>
+              </div>
+
+              <div class="hitos-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 14px;">
+                <div class="hito-box" style="background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #f59e0b;">
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block;">Vista Previa / Wireframe</span>
+                  <strong style="color: #f8fafc; font-size: 0.95rem; margin-top: 4px; display: block;">{{ p.fechaVistaPrevia || 'Sin programar' }}</strong>
+                </div>
+
+                <div class="hito-box" style="background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #8b5cf6;">
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block;">Demo de Avance</span>
+                  <strong style="color: #f8fafc; font-size: 0.95rem; margin-top: 4px; display: block;">{{ p.fechaDemo || 'Sin programar' }}</strong>
+                </div>
+
+                <div class="hito-box" style="background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #3b82f6;">
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block;">Entrega de MVP</span>
+                  <strong style="color: #f8fafc; font-size: 0.95rem; margin-top: 4px; display: block;">{{ p.fechaMvp || 'Sin programar' }}</strong>
+                </div>
+
+                <div class="hito-box" style="background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #10b981;">
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block;">Puesta en Producción</span>
+                  <strong style="color: #f8fafc; font-size: 0.95rem; margin-top: 4px; display: block;">{{ p.fechaEntrega || p.endDate || 'Sin programar' }}</strong>
+                </div>
+              </div>
             </div>
 
             <!-- Propuesta Comercial Vinculada -->

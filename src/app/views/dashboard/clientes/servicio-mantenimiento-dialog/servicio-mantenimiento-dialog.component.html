@@ -1,0 +1,126 @@
+<div class="servicio-dialog-container">
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>{{ esEdicion ? 'edit' : 'support_agent' }}</mat-icon>
+    </div>
+    <div>
+      <h2 mat-dialog-title>{{ esEdicion ? 'Editar Abono de Soporte' : 'Asignar Servicio de Mantenimiento / Soporte' }}</h2>
+      <p class="dialog-subtitle">
+        Cliente: <strong>{{ data.cliente.name }}</strong> · Control de abonos recurrentes y SLA
+      </p>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <mat-dialog-content class="dialog-content">
+      
+      <!-- Fila 1: Nombre y Tipo de Soporte -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-7">
+          <mat-label>Nombre del Abono / Servicio</mat-label>
+          <input matInput formControlName="nombre" placeholder="Ej: Mantenimiento Preventivo & Cloud" />
+          <mat-icon matPrefix>label</mat-icon>
+          @if (form.get('nombre')?.hasError('required') && form.get('nombre')?.touched) {
+            <mat-error>El nombre es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-5">
+          <mat-label>Tipo de Servicio</mat-label>
+          <mat-select formControlName="tipo">
+            @for (t of tiposSoporte; track t.value) {
+              <mat-option [value]="t.value">
+                <mat-icon class="opt-icon">{{ t.icon }}</mat-icon>
+                {{ t.label }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 2: Proyecto Vinculado Opcional -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-12">
+          <mat-label>Proyecto / Sistema Vinculado (Opcional)</mat-label>
+          <mat-select formControlName="proyectoId">
+            <mat-option [value]="null">Soporte Integral General de la Cuenta</mat-option>
+            @for (p of data.proyectos; track p.id) {
+              <mat-option [value]="p.id">{{ p.title }} ({{ p.versionTag || 'v1.0' }})</mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix>folder</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 3: Monto, Moneda, Día de Cobro y Estado -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Monto Recurrente</mat-label>
+          <input matInput type="number" formControlName="monto" min="0" />
+          <mat-icon matPrefix>attach_money</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Moneda</mat-label>
+          <mat-select formControlName="currency">
+            <mat-option value="USD">USD</mat-option>
+            <mat-option value="ARS">ARS</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Día de Cobro (1-31)</mat-label>
+          <input matInput type="number" formControlName="diaCobro" min="1" max="31" />
+          <mat-icon matPrefix>today</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-3">
+          <mat-label>Estado de Cobranza</mat-label>
+          <mat-select formControlName="estadoPago">
+            @for (est of estadosPago; track est.value) {
+              <mat-option [value]="est.value">{{ est.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 4: Bolsa de Horas de Soporte -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-6">
+          <mat-label>Horas Mensuales Incluidas</mat-label>
+          <input matInput type="number" formControlName="horasIncluidas" min="0" />
+          <mat-icon matPrefix>timelapse</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-6">
+          <mat-label>Horas Consumidas en el Mes</mat-label>
+          <input matInput type="number" formControlName="horasConsumidas" min="0" />
+          <mat-icon matPrefix>hourglass_bottom</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 5: Notas de SLA / Alcance -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="col-12">
+          <mat-label>Alcance de Soporte y SLA (Acuerdo de Nivel de Servicio)</mat-label>
+          <textarea matInput formControlName="notasSLA" rows="3" placeholder="Detalle qué incluye este abono (backups semanales, guardias, canales de atención)"></textarea>
+        </mat-form-field>
+      </div>
+
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="dialog-actions">
+      <button mat-button type="button" (click)="cancelar()" [disabled]="guardando()">
+        Cancelar
+      </button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || guardando()">
+        @if (guardando()) {
+          <mat-spinner diameter="18" class="btn-spinner"></mat-spinner>
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
+        {{ esEdicion ? 'Actualizar Abono' : 'Asignar Servicio' }}
+      </button>
+    </mat-dialog-actions>
+  </form>
+</div>

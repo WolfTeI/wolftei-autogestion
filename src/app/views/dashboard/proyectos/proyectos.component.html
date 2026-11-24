@@ -10,6 +10,10 @@
 
     <!-- Controles de Filtro y Toggle de Vistas -->
     <div class="header-controls">
+      <button mat-flat-button color="primary" (click)="abrirNuevoProyectoDialog()" matTooltip="Iniciar un proyecto o ampliación formal para un cliente">
+        <mat-icon>add_task</mat-icon> + Iniciar Proyecto
+      </button>
+
       <mat-form-field appearance="outline" class="client-filter-select" subscriptSizing="dynamic">
         <mat-label>Filtrar por Cliente</mat-label>
         <mat-icon matPrefix>person</mat-icon>

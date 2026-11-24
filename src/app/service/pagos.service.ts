@@ -225,4 +225,68 @@ export class PagosService {
       ...(docSnap.data() as Omit<Pago, 'id'>),
     }));
   }
+
+  /**
+   * Rutina de sanación para vincular pagos huérfanos o genéricos a sus clientes reales.
+   */
+  async autoSanarPagosHuerfanos(): Promise<number> {
+    try {
+      const paymentsCol = collection(this.firebaseService.db, this.COLLECTION_NAME);
+      const snap = await getDocs(paymentsCol);
+      if (snap.empty) return 0;
+
+      const projSnap = await getDocs(collection(this.firebaseService.db, 'projects'));
+      const propSnap = await getDocs(collection(this.firebaseService.db, 'proposals'));
+      const cliSnap = await getDocs(collection(this.firebaseService.db, 'clients'));
+
+      const projects = projSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const proposals = propSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const clients = cliSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      let sanados = 0;
+      for (const d of snap.docs) {
+        const data = d.data();
+        if (!data['clientId']) {
+          let targetClientId: string | null = null;
+
+          // 1. Buscar en propuestas por propuestaId
+          if (data['propuestaId']) {
+            const prop: any = proposals.find((p: any) => p.id === data['propuestaId']);
+            if (prop && prop.clientId) {
+              targetClientId = prop.clientId;
+            } else {
+              const proj: any = projects.find(
+                (pj: any) => pj.propuestaId === data['propuestaId'] || pj.id === data['propuestaId']
+              );
+              if (proj && proj.clientId) {
+                targetClientId = proj.clientId;
+              }
+            }
+          }
+
+          // 2. Si no resolvió, buscar si coincide con cliente de proyecto cerrado (Lucacen)
+          if (!targetClientId) {
+            const lucacenCli: any = clients.find((c: any) =>
+              c.name?.toLowerCase().includes('lucacen')
+            );
+            if (lucacenCli) {
+              targetClientId = lucacenCli.id;
+            }
+          }
+
+          if (targetClientId) {
+            await updateDoc(doc(this.firebaseService.db, this.COLLECTION_NAME, d.id), {
+              clientId: targetClientId,
+              updatedAt: new Date().toISOString(),
+            });
+            sanados++;
+          }
+        }
+      }
+      return sanados;
+    } catch (e) {
+      console.warn('Error al auto-sanar pagos huérfanos:', e);
+      return 0;
+    }
+  }
 }

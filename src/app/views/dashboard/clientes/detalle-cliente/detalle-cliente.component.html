@@ -11,6 +11,14 @@
         WhatsApp
       </button>
     }
+    <button mat-flat-button color="primary" (click)="iniciarProyectoParaCliente()" style="margin-right: 8px;" matTooltip="Iniciar un proyecto o ampliación formal para este cliente">
+      <mat-icon>add_task</mat-icon>
+      + Iniciar Proyecto / Ampliación
+    </button>
+    <button mat-stroked-button (click)="abrirNuevoServicioSoporte()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); margin-right: 8px;" matTooltip="Asignar abono mensual de soporte, hosting o bolsa de horas">
+      <mat-icon style="color: #38bdf8;">support_agent</mat-icon>
+      + Asignar Soporte
+    </button>
     <button mat-stroked-button [matMenuTriggerFor]="legalMenu" style="margin-right: 8px;" matTooltip="Descargar instrumentos legales en PDF">
       <mat-icon>gavel</mat-icon>
       Documentos Legales
@@ -92,29 +100,55 @@
       <div class="client-activity-column">
         <!-- Historial de Proyectos -->
         <mat-card class="projects-card">
-          <mat-card-header>
-            <mat-icon mat-card-avatar style="color: #3b82f6;">folder_special</mat-icon>
-            <mat-card-title>Proyectos & Soluciones Desarrolladas</mat-card-title>
-            <mat-card-subtitle>Desarrollos, versiones y módulos asignados a {{ cli.name }}</mat-card-subtitle>
+          <mat-card-header style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <mat-icon mat-card-avatar style="color: #3b82f6;">folder_special</mat-icon>
+              <div>
+                <mat-card-title>Proyectos & Soluciones Desarrolladas</mat-card-title>
+                <mat-card-subtitle>Desarrollos, versiones y módulos asignados a {{ cli.name }}</mat-card-subtitle>
+              </div>
+            </div>
+            <button mat-stroked-button color="primary" (click)="iniciarProyectoParaCliente()">
+              <mat-icon>add</mat-icon> Nuevo Proyecto
+            </button>
           </mat-card-header>
           
           <mat-divider></mat-divider>
           
           <mat-card-content>
             @if (proyectos().length === 0) {
-              <p class="text-muted empty-projects">No hay proyectos activos o entregados asociados a este cliente.</p>
+              <div class="empty-projects-box">
+                <p class="text-muted">No hay proyectos activos asociados a este cliente.</p>
+                <button mat-flat-button color="primary" (click)="iniciarProyectoParaCliente()">
+                  <mat-icon>add_task</mat-icon> Iniciar Primer Proyecto
+                </button>
+              </div>
             } @else {
               <mat-list>
                 @for (proyecto of proyectos(); track proyecto.id) {
-                  <mat-list-item>
-                    <mat-icon matListItemIcon>folder</mat-icon>
-                    <div matListItemTitle>
-                      <strong>{{ proyecto.title }}</strong>
+                  <mat-list-item class="project-list-item" [routerLink]="['/dashboard/proyectos', proyecto.id]">
+                    <mat-icon matListItemIcon style="color: #60a5fa;">folder</mat-icon>
+                    <div matListItemTitle class="project-item-title">
+                      <strong class="title-link">{{ proyecto.title }}</strong>
                       @if (proyecto.versionTag) {
                         <span class="version-badge"> {{ proyecto.versionTag }}</span>
                       }
+                      @if (proyecto.esProyectoMadre === false) {
+                        <span class="ampliacion-badge">AMPLIACIÓN</span>
+                      }
                     </div>
-                    <div matListItemLine>Fase actual: {{ proyecto.currentPhase }} · Monto: {{ proyecto.totalAmount }} {{ proyecto.currency }}</div>
+                    <div matListItemLine class="project-item-subtitle">
+                      Fase: <strong>{{ proyecto.currentPhase }}</strong> · Inversión: {{ proyecto.totalAmount }} {{ proyecto.currency }}
+                      @if (proyecto.fechaDemo) {
+                        <span> · Demo: {{ proyecto.fechaDemo }}</span>
+                      }
+                      @if (proyecto.fechaMvp) {
+                        <span> · MVP: {{ proyecto.fechaMvp }}</span>
+                      }
+                      @if (proyecto.fechaEntrega) {
+                        <span> · Entrega: {{ proyecto.fechaEntrega }}</span>
+                      }
+                    </div>
                     <div matListItemMeta>
                       <mat-chip [color]="getStatusColor(proyecto.status)" selected>
                         {{ proyecto.status | uppercase }}
@@ -123,6 +157,94 @@
                   </mat-list-item>
                 }
               </mat-list>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Servicios de Mantenimiento & Soporte Técnico (Abonos Recurrentes) -->
+        <mat-card class="projects-card" style="margin-top: 20px;">
+          <mat-card-header style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <mat-icon mat-card-avatar style="color: #10b981;">support_agent</mat-icon>
+              <div>
+                <mat-card-title>Abonos de Mantenimiento & Mesa de Ayuda</mat-card-title>
+                <mat-card-subtitle>Servicios recurrentes contratados, estado de cobranza y SLA para soporte técnico</mat-card-subtitle>
+              </div>
+            </div>
+            <button mat-stroked-button (click)="abrirNuevoServicioSoporte()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">
+              <mat-icon>add</mat-icon> Asignar Abono
+            </button>
+          </mat-card-header>
+
+          <mat-divider></mat-divider>
+
+          <mat-card-content>
+            @if (!cli.serviciosSoporte || cli.serviciosSoporte.length === 0) {
+              <div class="empty-projects-box">
+                <p class="text-muted">Este cliente aún no tiene un abono de mantenimiento asignado.</p>
+                <button mat-stroked-button (click)="abrirNuevoServicioSoporte()">
+                  <mat-icon>support_agent</mat-icon> Activar Servicio de Soporte
+                </button>
+              </div>
+            } @else {
+              <div class="soporte-list">
+                @for (serv of cli.serviciosSoporte; track serv.id) {
+                  <div class="soporte-item" [class.pendiente]="serv.estadoPago === 'pendiente_pago'">
+                    <div class="soporte-main">
+                      <div class="soporte-header-row">
+                        <strong>{{ serv.nombre }}</strong>
+                        <span class="badge-pago" [class]="serv.estadoPago">
+                          {{ serv.estadoPago === 'al_dia' ? 'AL DÍA' : (serv.estadoPago === 'pendiente_pago' ? 'PENDIENTE DE PAGO' : 'PAUSADO') }}
+                        </span>
+                      </div>
+
+                      <div class="soporte-meta">
+                        <span>Abono: <strong>{{ serv.monto }} {{ serv.currency }} / mes</strong></span>
+                        <span>· Día de cobro: <strong>Día {{ serv.diaCobro }} de cada mes</strong></span>
+                        @if (serv.proyectoTitulo) {
+                          <span>· Vinculado a: <strong>{{ serv.proyectoTitulo }}</strong></span>
+                        }
+                        @if (serv.horasIncluidas) {
+                          <span>· Bolsa de horas: <strong>{{ serv.horasConsumidas || 0 }} / {{ serv.horasIncluidas }} hs</strong></span>
+                        }
+                      </div>
+
+                      @if (serv.notasSLA) {
+                        <p class="soporte-sla"><mat-icon>verified</mat-icon> {{ serv.notasSLA }}</p>
+                      }
+                    </div>
+
+                    <div class="soporte-actions">
+                      <button mat-icon-button [matMenuTriggerFor]="soporteMenu" matTooltip="Opciones de cobro y abono">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #soporteMenu="matMenu">
+                        @if (serv.estadoPago !== 'al_dia') {
+                          <button mat-menu-item (click)="cambiarEstadoPagoSoporte(serv, 'al_dia')">
+                            <mat-icon style="color: #10b981;">check_circle</mat-icon>
+                            <span>Marcar como Al Día (Cobrado)</span>
+                          </button>
+                        }
+                        @if (serv.estadoPago !== 'pendiente_pago') {
+                          <button mat-menu-item (click)="cambiarEstadoPagoSoporte(serv, 'pendiente_pago')">
+                            <mat-icon style="color: #f59e0b;">error_outline</mat-icon>
+                            <span>Marcar como Pendiente de Cobro</span>
+                          </button>
+                        }
+                        <button mat-menu-item (click)="editarServicioSoporte(serv)">
+                          <mat-icon>edit</mat-icon>
+                          <span>Editar Abono</span>
+                        </button>
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item (click)="eliminarServicioSoporte(serv)" style="color: #f87171;">
+                          <mat-icon style="color: #f87171;">delete</mat-icon>
+                          <span>Eliminar Abono</span>
+                        </button>
+                      </mat-menu>
+                    </div>
+                  </div>
+                }
+              </div>
             }
           </mat-card-content>
         </mat-card>

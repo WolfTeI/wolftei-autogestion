@@ -26,6 +26,7 @@ import { generateActaGarantiaPDF } from '../../../utils/acta-garantia-pdf-genera
 import { BovedaCredencialesDialogComponent } from './boveda-dialog/boveda-dialog.component';
 import { EditarClienteDialogComponent, EditarClienteDialogData } from '../clientes/editar-cliente-dialog/editar-cliente-dialog.component';
 import { NuevaVersionDialogComponent } from './nueva-version-dialog/nueva-version-dialog.component';
+import { NuevoProyectoDialogComponent } from './nuevo-proyecto-dialog/nuevo-proyecto-dialog.component';
 
 export interface ProyectoView extends Proyecto {
   clientName?: string;
@@ -127,6 +128,18 @@ export class ProyectosComponent implements OnInit, OnDestroy {
   horasDesdeEntrega(p: ProyectoView): number {
     const fecha = p.fechaEntrega ? new Date(p.fechaEntrega).getTime() : (p.updatedAt ? new Date(p.updatedAt).getTime() : Date.now());
     return Math.max(0, Math.floor((Date.now() - fecha) / (1000 * 60 * 60)));
+  }
+
+  abrirNuevoProyectoDialog(): void {
+    const dialogRef = this.dialog.open(NuevoProyectoDialogComponent, {
+      width: '680px',
+    });
+
+    dialogRef.afterClosed().subscribe((res) => {
+      if (res && res.id) {
+        this.router.navigate(['/dashboard/proyectos', res.id]);
+      }
+    });
   }
 
   abrirNuevaVersionDialog(proyectoMadre: ProyectoView): void {

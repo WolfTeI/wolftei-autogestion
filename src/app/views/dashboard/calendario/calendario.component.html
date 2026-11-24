@@ -1,0 +1,187 @@
+<div class="calendario-container">
+  <div class="calendario-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <h1>Calendario de Entregas & Hitos</h1>
+        <span class="badge-cal">WINDOWS CALENDAR INTEGRATION</span>
+      </div>
+      <p class="subtitle">
+        Seguimiento visual de fechas límite: Vistas previas de diseño, Demos funcionales, entregas de MVP y puestas en producción.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button (click)="enviarRecordatorioWindows()" matTooltip="Emitir notificación push nativa de Windows con las entregas próximas">
+        <mat-icon style="color: #fbbf24;">notifications_active</mat-icon>
+        Alerta Windows
+      </button>
+
+      <button mat-flat-button color="primary" (click)="exportarCalendarioWindowsICS()" matTooltip="Descargar archivo .ics compatible con la app Calendario de Windows y Microsoft Outlook">
+        <mat-icon>calendar_month</mat-icon>
+        Exportar a Calendario Windows (.ics)
+      </button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando cronogramas de proyectos...</p>
+    </div>
+  } @else {
+    <div class="calendario-layout">
+      
+      <!-- ── COLUMNA PRINCIPAL: CUADRÍCULA MENSUAL ── -->
+      <div class="calendario-main">
+        <mat-card class="cal-card">
+          <!-- Barra de navegación del mes -->
+          <div class="month-nav-bar">
+            <div class="month-selector">
+              <h2>{{ fechaVisualizada() | date: 'MMMM yyyy' : '' : 'es-AR' | titlecase }}</h2>
+              <button mat-stroked-button class="btn-hoy" (click)="irAHoy()">Hoy</button>
+            </div>
+
+            <div class="nav-arrows">
+              <button mat-icon-button (click)="cambiarMes(-1)" matTooltip="Mes anterior">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+              <button mat-icon-button (click)="cambiarMes(1)" matTooltip="Mes siguiente">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cabecera de días de la semana -->
+          <div class="weekdays-grid">
+            @for (dia of diasSemana; track dia) {
+              <div class="weekday-cell">{{ dia }}</div>
+            }
+          </div>
+
+          <!-- Cuadrícula de días -->
+          <div class="days-grid">
+            @for (dia of matrizMes(); track dia.fechaStr) {
+              <div
+                class="day-cell"
+                [class.other-month]="!dia.esMesActual"
+                [class.today]="dia.esHoy"
+                [class.has-events]="dia.eventos.length > 0"
+              >
+                <div class="day-header">
+                  <span class="day-number">{{ dia.numeroDia }}</span>
+                  @if (dia.esHoy) {
+                    <span class="today-indicator">HOY</span>
+                  }
+                </div>
+
+                <div class="events-container">
+                  @for (ev of dia.eventos; track ev.id) {
+                    <div
+                      class="event-pill"
+                      [style.backgroundColor]="ev.color + '25'"
+                      [style.borderColor]="ev.color + '60'"
+                      [style.color]="ev.color"
+                      [matTooltip]="ev.tipoEtiqueta + ' · ' + ev.proyectoTitulo + ' (' + ev.clienteNombre + ')'"
+                      (click)="abrirProyecto(ev.proyectoId)"
+                    >
+                      <mat-icon class="pill-icon">{{ ev.icono }}</mat-icon>
+                      <span class="pill-title">{{ ev.proyectoTitulo }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card>
+      </div>
+
+      <!-- ── COLUMNA LATERAL: PRÓXIMOS HITOS DEL CRONOGRAMA ── -->
+      <div class="calendario-side">
+        <mat-card class="proximos-card">
+          <div class="side-header">
+            <mat-icon style="color: #38bdf8;">upcoming</mat-icon>
+            <div>
+              <h3>Próximos Hitos</h3>
+              <small>Compromisos agendados</small>
+            </div>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          @if (proximosHitos().length === 0) {
+            <div class="empty-side">
+              <mat-icon>event_available</mat-icon>
+              <p>No hay entregas pendientes registradas en los próximos días.</p>
+              <small>Configurá las fechas en cada proyecto o al crear uno nuevo.</small>
+            </div>
+          } @else {
+            <div class="proximos-list">
+              @for (h of proximosHitos(); track h.id) {
+                <div class="proximo-item" [style.borderLeftColor]="h.color">
+                  <div class="p-top">
+                    <span class="p-tipo" [style.color]="h.color">
+                      <mat-icon class="mini-icon">{{ h.icono }}</mat-icon>
+                      {{ h.tipoEtiqueta }}
+                    </span>
+                    <span
+                      class="p-dias"
+                      [class.urgente]="h.diasRestantes <= 1"
+                      [class.hoy]="h.diasRestantes === 0"
+                    >
+                      {{ h.diasRestantes === 0 ? '¡ES HOY!' : (h.diasRestantes === 1 ? 'MAÑANA' : (h.diasRestantes < 0 ? 'VENCIDO' : 'En ' + h.diasRestantes + ' días')) }}
+                    </span>
+                  </div>
+
+                  <strong class="p-title" (click)="abrirProyecto(h.proyectoId)">
+                    {{ h.proyectoTitulo }}
+                  </strong>
+
+                  <div class="p-cliente">
+                    <mat-icon>person</mat-icon>
+                    <span>{{ h.clienteNombre }}</span>
+                  </div>
+
+                  <div class="p-footer">
+                    <span class="p-fecha">{{ h.fecha | date: 'dd/MM/yyyy' }}</span>
+
+                    <div class="p-actions">
+                      @if (h.clienteTelefono) {
+                        <button
+                          mat-icon-button
+                          (click)="contactarWhatsApp(h)"
+                          matTooltip="Avisar al cliente por WhatsApp"
+                          style="color: #10b981;"
+                        >
+                          <mat-icon>chat</mat-icon>
+                        </button>
+                      }
+                      <button
+                        mat-icon-button
+                        (click)="abrirProyecto(h.proyectoId)"
+                        matTooltip="Ver expediente del proyecto"
+                      >
+                        <mat-icon>open_in_new</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </mat-card>
+
+        <!-- Leyenda de Colores de Hitos -->
+        <mat-card class="legend-card">
+          <h4>Tipos de Hitos</h4>
+          <div class="legend-items">
+            <div class="legend-item"><span class="dot vp"></span> Vista Previa / Wireframe</div>
+            <div class="legend-item"><span class="dot demo"></span> Demo Funcional de Avance</div>
+            <div class="legend-item"><span class="dot mvp"></span> Entrega de Versión MVP</div>
+            <div class="legend-item"><span class="dot prod"></span> Puesta en Producción / Entrega</div>
+          </div>
+        </mat-card>
+      </div>
+
+    </div>
+  }
+</div>

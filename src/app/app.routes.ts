@@ -4,7 +4,7 @@ import { authGuard } from "./guards/auth.guard";
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'login',
+    redirectTo: 'dashboard',
     pathMatch: 'full'
   },
   {
@@ -127,6 +127,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./views/dashboard/proyectos/detalle-proyecto/detalle-proyecto.component').then(
             (m) => m.DetalleProyectoComponent,
+          ),
+      },
+      // ── Calendario de Hitos y Entregas ──
+      {
+        path: 'calendario',
+        loadComponent: () =>
+          import('./views/dashboard/calendario/calendario.component').then(
+            (m) => m.CalendarioComponent,
           ),
       },
       // ── Finanzas, Cobranzas y Reseñas ──

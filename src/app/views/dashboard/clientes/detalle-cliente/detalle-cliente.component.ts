@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { ClientesService, Cliente } from '../../../../service/clientes.service';
+import { ClientesService, Cliente, ServicioMantenimiento, EstadoPagoSoporte } from '../../../../service/clientes.service';
 import { ProyectosService, Proyecto } from '../../../../service/proyectos.service';
 import { PropuestasService, Propuesta } from '../../../../service/propuestas.service';
 import { WhatsAppService } from '../../../../service/whatsapp.service';
@@ -19,6 +19,8 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { generateContractPDF, generateNDAPDF, generateBothLegalPDFs } from '../../../../utils/contract-pdf-generator';
 import { EditarClienteDialogComponent } from '../editar-cliente-dialog/editar-cliente-dialog.component';
 import { EliminarClienteDialogComponent } from '../eliminar-cliente-dialog/eliminar-cliente-dialog.component';
+import { NuevoProyectoDialogComponent } from '../../proyectos/nuevo-proyecto-dialog/nuevo-proyecto-dialog.component';
+import { ServicioMantenimientoDialogComponent } from '../servicio-mantenimiento-dialog/servicio-mantenimiento-dialog.component';
 
 @Component({
   selector: 'app-detalle-cliente',
@@ -193,6 +195,88 @@ export class DetalleClienteComponent implements OnInit {
           }
         });
       }
+    });
+  }
+
+  // ── Nuevo Flujo Jerárquico: Iniciar Proyecto desde Cliente ──
+
+  iniciarProyectoParaCliente(): void {
+    const cli = this.cliente();
+    if (!cli) return;
+
+    const dialogRef = this.dialog.open(NuevoProyectoDialogComponent, {
+      width: '680px',
+      data: { cliente: cli, clientId: cli.id },
+    });
+
+    dialogRef.afterClosed().subscribe((res) => {
+      if (res && res.id) {
+        this.cargarProyectos(cli.id!);
+        this.router.navigate(['/dashboard/proyectos', res.id]);
+      }
+    });
+  }
+
+  // ── Gestión de Abonos y Servicios de Mantenimiento ──
+
+  abrirNuevoServicioSoporte(): void {
+    const cli = this.cliente();
+    if (!cli) return;
+
+    const dialogRef = this.dialog.open(ServicioMantenimientoDialogComponent, {
+      width: '640px',
+      data: { cliente: cli, proyectos: this.proyectos() },
+    });
+
+    dialogRef.afterClosed().subscribe((guardado) => {
+      if (guardado) {
+        this.cargarDatos(cli.id!);
+      }
+    });
+  }
+
+  editarServicioSoporte(servicio: ServicioMantenimiento): void {
+    const cli = this.cliente();
+    if (!cli) return;
+
+    const dialogRef = this.dialog.open(ServicioMantenimientoDialogComponent, {
+      width: '640px',
+      data: { cliente: cli, proyectos: this.proyectos(), servicio },
+    });
+
+    dialogRef.afterClosed().subscribe((guardado) => {
+      if (guardado) {
+        this.cargarDatos(cli.id!);
+      }
+    });
+  }
+
+  cambiarEstadoPagoSoporte(servicio: ServicioMantenimiento, estado: EstadoPagoSoporte): void {
+    const cli = this.cliente();
+    if (!cli || !cli.id) return;
+
+    this.clientesService.actualizarServicioSoporte(cli.id, servicio.id, { estadoPago: estado }).subscribe({
+      next: () => {
+        this.snackBar.open(`Estado de abono actualizado a "${estado.replace('_', ' ').toUpperCase()}".`, '', { duration: 2500 });
+        this.cargarDatos(cli.id!);
+      },
+      error: (e) => console.error(e),
+    });
+  }
+
+  eliminarServicioSoporte(servicio: ServicioMantenimiento): void {
+    const cli = this.cliente();
+    if (!cli || !cli.id) return;
+
+    const ok = window.confirm(`¿Deseás eliminar el abono "${servicio.nombre}" de este cliente?`);
+    if (!ok) return;
+
+    this.clientesService.eliminarServicioSoporte(cli.id, servicio.id).subscribe({
+      next: () => {
+        this.snackBar.open('Abono de soporte eliminado.', '', { duration: 2500 });
+        this.cargarDatos(cli.id!);
+      },
+      error: (e) => console.error(e),
     });
   }
 }

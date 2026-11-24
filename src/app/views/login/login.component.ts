@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,7 +25,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -38,6 +38,13 @@ export class LoginComponent {
 
   loading = false;
   hidePassword = true;
+
+  ngOnInit(): void {
+    // Si ya existe sesión activa y válida, redirigir directo al Dashboard sin pedir credenciales
+    if (this.authService.isLoggedIn()) {
+      this.router.navigate(['/dashboard']);
+    }
+  }
 
   private async hashSHA256(message: string): Promise<string> {
     const msgBuffer = new TextEncoder().encode(message);

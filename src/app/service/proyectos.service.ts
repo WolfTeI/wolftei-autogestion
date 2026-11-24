@@ -53,6 +53,11 @@ export interface Proyecto {
   saldoCobrado?: boolean;
   fechaEntrega?: string | null;
   archivadoFecha?: string | null;
+  // ── Calendario de Hitos y Entregas ──
+  fechaVistaPrevia?: string | null;
+  fechaDemo?: string | null;
+  fechaMvp?: string | null;
+  tieneSoporteActivo?: boolean;
   reviewToken?: string | null;
   reviewCompleted?: boolean;
   reviewStars?: number;
@@ -212,16 +217,35 @@ export class ProyectosService {
     const colRef = collection(this.firebaseService.db, this.COLLECTION_NAME);
     const now = new Date().toISOString();
 
-    const payload = {
+    const payload: any = {
       clientId: proyecto.clientId,
+      clientName: proyecto.clientName || null,
+      clientCompany: proyecto.clientCompany || null,
+      clientPhone: proyecto.clientPhone || null,
+      clientEmail: proyecto.clientEmail || null,
+      clientTaxId: proyecto.clientTaxId || null,
+      propuestaId: proyecto.propuestaId || null,
       title: proyecto.title,
       description: proyecto.description || null,
-      status: proyecto.status || 'pendiente',
-      currentPhase: proyecto.currentPhase || 'Inicio',
+      status: proyecto.status || 'esperando_anticipo',
+      currentPhase: proyecto.currentPhase || 'Planificación Inicial',
       startDate: proyecto.startDate || null,
       endDate: proyecto.endDate || null,
-      totalAmount: proyecto.totalAmount || 0,
+      deliveryDays: proyecto.deliveryDays || 20,
+      totalAmount: Number(proyecto.totalAmount) || 0,
       currency: proyecto.currency || 'USD',
+      anticipoCobrado: !!proyecto.anticipoCobrado,
+      saldoCobrado: !!proyecto.saldoCobrado,
+      fechaEntrega: proyecto.fechaEntrega || null,
+      fechaVistaPrevia: proyecto.fechaVistaPrevia || null,
+      fechaDemo: proyecto.fechaDemo || null,
+      fechaMvp: proyecto.fechaMvp || null,
+      tieneSoporteActivo: !!proyecto.tieneSoporteActivo,
+      esProyectoMadre: proyecto.esProyectoMadre ?? true,
+      parentProjectId: proyecto.parentProjectId || null,
+      parentProjectTitle: proyecto.parentProjectTitle || null,
+      versionTag: proyecto.versionTag || 'v1.0',
+      tipoEvolucion: proyecto.tipoEvolucion || 'inicial',
       reviewToken: null,
       reviewCompleted: false,
       createdAt: now,

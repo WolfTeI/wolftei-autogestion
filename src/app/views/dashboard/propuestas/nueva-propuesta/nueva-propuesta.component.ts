@@ -282,6 +282,29 @@ export class NuevaPropuestaComponent implements OnInit {
       this.propuestaId = id;
       this.cargarPropuestaParaEdicion(id);
     } else {
+      // Detectar si venimos desde un Proyecto
+      const fromProyecto = history.state?.fromProyecto;
+      const qClienteId = this.route.snapshot.queryParamMap.get('clienteId');
+      const qProyectoId = this.route.snapshot.queryParamMap.get('proyectoId');
+
+      if (fromProyecto) {
+        this.form.patchValue({
+          clientId: fromProyecto.clientId || null,
+          clientPreviewName: fromProyecto.clientName || '',
+          clientPreviewEmail: fromProyecto.clientEmail || '',
+          title: fromProyecto.title || '',
+          totalAmount: fromProyecto.totalAmount || 0,
+          currency: fromProyecto.currency || 'USD',
+        });
+        if (fromProyecto.proyectoId) {
+          (this.form as any).proyectoId = fromProyecto.proyectoId;
+        }
+        this.snackBar.open(`📋 Presupuesto vinculado al proyecto "${fromProyecto.title}".`, 'Cerrar', { duration: 3500 });
+      } else if (qClienteId) {
+        this.form.patchValue({ clientId: qClienteId });
+        if (qProyectoId) (this.form as any).proyectoId = qProyectoId;
+      }
+
       // Detectar si venimos desde un Informe Técnico
       const stateData = history.state?.fromInforme;
       if (stateData) {
